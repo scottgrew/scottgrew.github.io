@@ -174,3 +174,40 @@ test("contact is linked beside GitHub and the form checks its fields before send
   await expect(page.getByRole("status")).toContainText("Message sent.");
   expect(posted).toMatchObject({ name: "Test Visitor", email: "visitor@example.com", message: "Hello, this is a test message." });
 });
+
+test("the point-cloud name never shows an empty canvas while the window resizes", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/");
+  await page.waitForTimeout(2500);
+  const filled = () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector("h1 canvas") as HTMLCanvasElement | null;
+      if (!canvas || !canvas.width) return 0;
+      const data = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      let lit = 0;
+      for (let i = 3; i < data.length; i += 4) if (data[i] > 0) lit += 1;
+      return lit;
+    });
+  for (const width of [1180, 1040, 900, 820, 1100, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    // Read back in the same frame as the resize, before any animation frame.
+    expect(await filled(), `name canvas at ${width}px`).toBeGreaterThan(500);
+  }
+  // Nothing of the name may touch the canvas's left or right edge (clipping).
+  const edges = await page.evaluate(() => {
+    const canvas = document.querySelector("h1 canvas") as HTMLCanvasElement;
+    const { width, height } = canvas;
+    const data = canvas.getContext("2d")!.getImageData(0, 0, width, height).data;
+    let left = width;
+    let right = 0;
+    for (let y = 0; y < height; y += 1)
+      for (let x = 0; x < width; x += 1)
+        if (data[(y * width + x) * 4 + 3] > 40) {
+          left = Math.min(left, x);
+          right = Math.max(right, x);
+        }
+    return { left, right, width };
+  });
+  expect(edges.left).toBeGreaterThan(2);
+  expect(edges.right).toBeLessThan(edges.width - 3);
+});

@@ -50,11 +50,17 @@ export function SkipConnection({
   const { width, height, x, top, bottom, right } = geometry;
   const join = 7;
 
+  // Two layers: the bypass path sits behind the column, and the ⊕ (the add,
+  // and the XOR symbol) sits in front of the connector line it joins.
   return (
-    <svg className={styles.skip} width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <path className={styles.path} d={`M ${x} ${top} H ${right} V ${bottom} H ${x + join}`} />
-      <circle className={styles.join} cx={x} cy={bottom} r={join} />
-      <path className={styles.join} d={`M ${x - 4} ${bottom} H ${x + 4} M ${x} ${bottom - 4} V ${bottom + 4}`} />
-    </svg>
+    <>
+      <svg className={styles.skip} width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+        <path className={styles.path} d={`M ${x} ${top} H ${right} V ${bottom} H ${x + join}`} />
+      </svg>
+      <svg className={styles.front} width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+        <circle className={styles.joinFill} cx={x} cy={bottom} r={join} />
+        <path className={styles.join} d={`M ${x - 4} ${bottom} H ${x + 4} M ${x} ${bottom - 4} V ${bottom + 4}`} />
+      </svg>
+    </>
   );
 }

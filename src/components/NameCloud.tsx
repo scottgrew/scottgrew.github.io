@@ -24,8 +24,9 @@ const CURSOR_PUSH = 5.5;
 const IDLE_FRAME_MS = 1000 / 30;
 const IDLE_AFTER_MS = 1200;
 
-// Each point's target is stored as a fraction of the heading's box, so a
-// resize only rescales the targets: no resampling, no jump.
+// Each point's target is stored as a fraction of the heading's box. A resize
+// resamples the letters at their new size (a millisecond or two) and puts
+// every point straight onto them, so the name is legible at every width.
 type Point = {
   nx: number;
   ny: number;
@@ -38,15 +39,21 @@ type Point = {
   scale: number; // 0.75 to 1.35, so the cloud reads as having depth
 };
 
-// Draws the heading's text into a canvas the size of the heading and keeps
-// a point for every filled cell of a grid over it.
+// Draws the heading's text on a roomy canvas, keeps a point for every filled
+// cell of a grid over it, then fits the letters' actual extent inside the
+// heading box, so the name can never be clipped at its edges.
 function samplePoints(heading: HTMLElement, text: string, width: number, height: number): Point[] {
+  // During a page transition the heading can measure zero; there is nothing
+  // to sample then, and a zero-sized canvas would throw.
+  if (width < 1 || height < 1) return [];
   const style = getComputedStyle(heading);
   const fontSize = parseFloat(style.fontSize);
   const spacing = parseFloat(style.letterSpacing) || 0;
   const canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(width);
-  canvas.height = Math.ceil(height);
+  const roomX = Math.ceil(width * 0.5);
+  const roomY = Math.ceil(height * 0.5);
+  canvas.width = Math.ceil(width) + roomX * 2;
+  canvas.height = Math.ceil(height) + roomY * 2;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return [];
   context.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}`;
@@ -56,32 +63,46 @@ function samplePoints(heading: HTMLElement, text: string, width: number, height:
   const letters = [...(style.textTransform === "uppercase" ? text.toUpperCase() : text)];
   const widths = letters.map((ch) => context.measureText(ch).width);
   const total = widths.reduce((sum, w) => sum + w, 0) + spacing * (letters.length - 1);
-  let x = (width - total) / 2;
+  let x = (canvas.width - total) / 2;
   letters.forEach((ch, i) => {
-    context.fillText(ch, x, height / 2);
+    context.fillText(ch, x, canvas.height / 2);
     x += widths[i] + spacing;
   });
 
   const step = Math.max(2, Math.round(fontSize / 24));
   const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  const points: Point[] = [];
+  const filled: [number, number][] = [];
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
   for (let py = 0; py < canvas.height; py += step) {
     for (let px = 0; px < canvas.width; px += step) {
       if (data[(py * canvas.width + px) * 4 + 3] < 128) continue;
-      points.push({
-        nx: (px + (Math.random() - 0.5) * step * 0.6) / width,
-        ny: (py + (Math.random() - 0.5) * step * 0.6) / height,
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: 0,
-        vy: 0,
-        phase: Math.random() * Math.PI * 2,
-        warm: Math.random() < 0.06,
-        scale: 0.75 + Math.random() * 0.6,
-      });
+      filled.push([px, py]);
+      minX = Math.min(minX, px);
+      maxX = Math.max(maxX, px);
+      minY = Math.min(minY, py);
+      maxY = Math.max(maxY, py);
     }
   }
-  return points;
+  if (!filled.length) return [];
+
+  // Natural size if it fits, shrunk uniformly if it would overflow; centred.
+  const fit = Math.min(1, (width * 0.98) / (maxX - minX + step), (height * 0.95) / (maxY - minY + step));
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+  return filled.map(([px, py]) => ({
+    nx: (width / 2 + (px - midX + (Math.random() - 0.5) * step * 0.6) * fit) / width,
+    ny: (height / 2 + (py - midY + (Math.random() - 0.5) * step * 0.6) * fit) / height,
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: 0,
+    vy: 0,
+    phase: Math.random() * Math.PI * 2,
+    warm: Math.random() < 0.06,
+    scale: 0.75 + Math.random() * 0.6,
+  }));
 }
 
 export function NameCloud({ text, className }: { text: string; className?: string }) {
@@ -114,27 +135,24 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     const targetX = (p: Point) => box.margin + p.nx * box.width;
     const targetY = (p: Point) => SCATTER_MARGIN + p.ny * box.height;
 
-    // Sizes the canvas around the heading. The first call samples the
-    // letters; later calls only rescale every point with the box.
-    const layout = () => {
+    // Sizes the canvas around the heading and samples the letters at the
+    // current size. Once the name has resolved (or on a resize mid-scan),
+    // every point is placed directly on its letter.
+    const layout = (resizing: boolean) => {
       const rect = heading.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
       const room = Math.min(rect.left, window.innerWidth - rect.right) - 4;
-      const next = { width: rect.width, height: rect.height, margin: Math.max(0, Math.min(SCATTER_MARGIN, room)) };
-      if (!points.length) {
-        points = samplePoints(heading, text, next.width, next.height);
-        points.forEach((p) => {
-          p.x = instant ? next.margin + p.nx * next.width : next.margin + p.x;
-          p.y = instant ? SCATTER_MARGIN + p.ny * next.height : SCATTER_MARGIN + p.y;
-        });
-      } else if (box.width && box.height) {
-        const sx = next.width / box.width;
-        const sy = next.height / box.height;
-        points.forEach((p) => {
-          p.x = next.margin + (p.x - box.margin) * sx;
-          p.y = SCATTER_MARGIN + (p.y - SCATTER_MARGIN) * sy;
-        });
+      box = { width: rect.width, height: rect.height, margin: Math.max(0, Math.min(SCATTER_MARGIN, room)) };
+      if (resizing && !instant) {
+        instant = true;
+        announced = true;
+        signal(NAME_DONE);
       }
-      box = next;
+      points = samplePoints(heading, text, box.width, box.height);
+      points.forEach((p) => {
+        p.x = instant ? targetX(p) : box.margin + p.x;
+        p.y = instant ? targetY(p) : SCATTER_MARGIN + p.y;
+      });
       const width = box.width + box.margin * 2;
       const height = box.height + SCATTER_MARGIN * 2;
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -148,6 +166,7 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     };
 
     const draw = (now: number) => {
+      if (!box.width) return;
       const width = box.width + box.margin * 2;
       const height = box.height + SCATTER_MARGIN * 2;
       const beam = instant ? Infinity : box.margin + ((now - scanStart) / SCAN_MS) * box.width;
@@ -219,12 +238,17 @@ export function NameCloud({ text, className }: { text: string; className?: strin
       cursor.y = -1e4;
     };
 
-    // Rescale on every size change, in the same frame: no debounce, no blink.
+    // Resample on every size change and redraw at once: resizing the canvas
+    // wipes it, and waiting for the next frame would show it empty.
+    let observed = false;
     const observer = new ResizeObserver(() => {
-      if (!points.length) return;
-      layout();
+      if (!observed) {
+        observed = true; // the first callback reports the initial size
+        return;
+      }
+      layout(true);
       lastActive = performance.now();
-      if (reduced) draw(performance.now());
+      draw(performance.now());
     });
 
     const stopSkip = onSkip(() => {
@@ -241,7 +265,7 @@ export function NameCloud({ text, className }: { text: string; className?: strin
 
     document.fonts.ready.then(() => {
       if (disposed) return;
-      layout();
+      layout(false);
       observer.observe(heading);
       if (reduced) draw(performance.now());
       else frame = requestAnimationFrame(loop);

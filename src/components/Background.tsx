@@ -241,10 +241,13 @@ export function Background() {
       }
     };
 
+    // Changing a canvas's size wipes it, so a resize draws straight away:
+    // waiting for the next capped frame would flash an empty canvas.
     const redraw = () => {
       if (!ready) return;
       resize();
-      if (reducedMotion) render(performance.now());
+      if (!start) start = performance.now();
+      render(performance.now());
     };
     let resizeFrame = 0;
     const onResize = () => {
