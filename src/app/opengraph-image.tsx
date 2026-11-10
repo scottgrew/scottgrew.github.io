@@ -57,9 +57,11 @@ export default async function OpengraphImage() {
               justifyContent: "center",
             }}
           >
-            {/* The site mark, ⊕: the cross spans the same share as on the site. */}
-            <svg width="120" height="120" viewBox="0 0 120 120">
-              <path d="M 60 26 V 94 M 26 60 H 94" stroke="#ffffff" strokeWidth="2" />
+            {/* The site mark: a Game of Life glider, as on the site. */}
+            <svg width="120" height="120" viewBox="0 0 88 88">
+              {[[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]].map(([column, row]) => (
+                <circle key={`${column}${row}`} cx={28 + 16 * column} cy={28 + 16 * row} r="5.5" fill="#ffffff" />
+              ))}
             </svg>
           </div>
           <p
