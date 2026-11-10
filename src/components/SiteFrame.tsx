@@ -119,6 +119,11 @@ function TopBar({ current }: { current: string }) {
 export function SiteFrame({ children }: { children: React.ReactNode }) {
   const current = normalize(usePathname());
   const isHome = current === "/";
+
+  // The sky reads this to draw at a lower frame rate behind project pages.
+  useEffect(() => {
+    document.body.dataset.view = isHome ? "home" : "page";
+  }, [isHome]);
   // "waiting" holds the column unseen until the sky hands off; "running"
   // plays the build-up once; "done" leaves everything plain. A finished visit,
   // reduced motion or any input goes straight to "done".

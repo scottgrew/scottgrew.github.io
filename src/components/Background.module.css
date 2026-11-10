@@ -1,9 +1,15 @@
 /* The scene behind every page. The canvas draws the live sky; when WebGL
    is missing the wrapper shows the still photo instead. */
 
+/* 100lvh: the largest viewport, so a phone's toolbar sliding away never
+   resizes the scene mid-scroll. */
 .wrap {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100lvh;
   z-index: 0;
   overflow: hidden;
   background: var(--bg) center / cover no-repeat;
@@ -38,5 +44,18 @@
   font-family: var(--font-mono-family);
   font-size: 0.7rem;
   letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.perf {
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  z-index: 20;
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  background: rgba(12, 14, 18, 0.8);
+  font-family: var(--font-mono-family);
+  font-size: 0.72rem;
   color: var(--accent);
 }

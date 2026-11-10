@@ -1,9 +1,16 @@
-// The live sky. One full-screen fragment shader turns the still mountain
-// photo into a cinemagraph: clouds above the ridgeline and the mist in the
-// valley drift and billow, the warm light breathes, and the rock and snow
-// never move. The two background easter eggs live here too: the blocky
-// "pooled" load is the u_pixel uniform, and feature-map mode is a real 3×3
-// Sobel convolution of the moving image.
+// The live sky, in two passes for speed.
+//
+// BAKE runs once, at the photo's own resolution, when the image loads. It
+// writes a texture whose RGB is the photo with the static landscape drawn on
+// the rock (topographic contours and the gradient-descent path) and whose
+// alpha is the motion mask: 1 where the sky and mist may move, 0 on rock.
+//
+// SKY runs every frame and reads only that baked texture: clouds and mist
+// billow inside the mask, a faint fog slides over them, the warm light
+// breathes, the scene is graded for the time of day, and stars come out at
+// night. The two background easter eggs live here too: u_pixel is the
+// blocky "pooled" resolve, and feature-map mode is a real 3×3 Sobel
+// convolution of the moving image.
 
 export const VERTEX_SHADER = `
 attribute vec2 a_position;
@@ -20,26 +27,8 @@ export const RIDGE = [
   0.46, 0.484, 0.49, 0.51, 0.51, 0.495, 0.5, 0.525, 0.56,
 ];
 
-export const FRAGMENT_SHADER = `
+const COMMON = `
 precision highp float;
-
-uniform sampler2D u_image;
-uniform vec2 u_resolution;   // canvas size in device pixels
-uniform vec2 u_imageSize;    // background.jpg size in pixels
-uniform float u_time;        // seconds since start; frozen for reduced motion
-uniform float u_pixel;       // block size of the pooled load; 1 is sharp
-uniform float u_feature;     // 1 shows the Sobel feature map
-uniform float u_zoom;        // slow drift, 1.00 to 1.01
-uniform float u_showMask;    // debug: tint the moving regions red
-uniform vec4 u_ridge[6];      // RIDGE packed four to a vector (21 used)
-uniform vec4 u_paths[8];      // the descent's 16 steps, two points per vector, image space
-uniform float u_pathDrawn;    // segments drawn so far (fractional)
-uniform float u_topo;         // contour opacity, 0 to 1, fading in after the opening
-uniform float u_bright;       // opening: the scene brightens from dim to normal
-uniform vec3 u_grade;         // time-of-day colour grade for the visitor's local hour
-uniform float u_night;        // 0 by day, 1 at night: stars come out
-
-const float CONTOURS_PER_UNIT = 5.5;
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -53,10 +42,11 @@ float noise(vec2 p) {
              mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
+// Four octaves: the fifth added detail too fine to see in soft cloud.
 float fbm(vec2 p) {
   float sum = 0.0;
   float amp = 0.5;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     sum += amp * noise(p);
     p = p * 2.03 + vec2(17.0, 9.0);
     amp *= 0.5;
@@ -64,8 +54,19 @@ float fbm(vec2 p) {
   return sum;
 }
 
-// The ridge and path arrays are packed into vec4s: phone GPUs allow few
-// fragment uniform vectors, and every array element costs a whole vector.
+float luminance(vec3 c) {
+  return dot(c, vec3(0.299, 0.587, 0.114));
+}
+`;
+
+export const BAKE_SHADER = `${COMMON}
+uniform sampler2D u_image;
+uniform vec2 u_imageSize;
+uniform vec4 u_ridge[6];   // RIDGE packed four to a vector (21 used)
+uniform vec4 u_paths[8];   // the descent's 16 steps, two points per vector
+
+const float CONTOURS_PER_UNIT = 5.5;
+
 // GLSL ES 1.0 only indexes uniform arrays by loop indices and constants, so
 // the array reads are macros expanded inside the loops, and the helpers only
 // pick a component out of a vector they are handed.
@@ -80,7 +81,6 @@ vec2 pick2(vec4 v, int c) {
 #define RIDGE_VALUE(k) pick4(u_ridge[(k) / 4], (k) - ((k) / 4) * 4)
 #define PATH_POINT(j) pick2(u_paths[(j) / 2], (j) - ((j) / 2) * 2)
 
-// Linear interpolation of the traced ridgeline at image x.
 float ridgeAt(float x) {
   float r = u_ridge[0].x;
   for (int k = 0; k < 20; k++) {
@@ -92,24 +92,9 @@ float ridgeAt(float x) {
   return r;
 }
 
-float luminance(vec3 c) {
-  return dot(c, vec3(0.299, 0.587, 0.114));
-}
-
-// Screen position (0..1, y down) to image coordinates, cropping like
-// background-size: cover, then zooming about the centre.
-vec2 coverUv(vec2 screen) {
-  float screenAspect = u_resolution.x / u_resolution.y;
-  float imageAspect = u_imageSize.x / u_imageSize.y;
-  vec2 scale = screenAspect > imageAspect
-    ? vec2(1.0, imageAspect / screenAspect)
-    : vec2(screenAspect / imageAspect, 1.0);
-  return (screen - 0.5) * scale / u_zoom + 0.5;
-}
-
-// How much a point in the image is allowed to move: 1 in the sky above the
-// ridgeline (fading out just above it, so snow edges never smear), 1 in the
-// bright valley mist, and a little in the warm haze along the bottom.
+// How much a point may move: 1 in the sky above the ridgeline (fading out
+// just above it, so snow edges never smear), 1 in the bright valley mist,
+// and a little in the warm haze along the bottom.
 float motionMask(vec2 uv, vec3 still) {
   float ridge = ridgeAt(clamp(uv.x, 0.0, 1.0));
   float sky = 1.0 - smoothstep(ridge - 0.035, ridge - 0.006, uv.y);
@@ -118,10 +103,9 @@ float motionMask(vec2 uv, vec3 still) {
   return clamp(max(sky, max(mist, haze)), 0.0, 1.0);
 }
 
-// The rock as a loss surface. Height falls with distance below the traced
-// ridgeline and rises with the (blurred) brightness of snow and lit rock, so
-// contours bend around snowfields and gullies. terrain.ts computes the same
-// function on the CPU to run gradient descent down it.
+// The rock as a loss surface: height falls with distance below the ridgeline
+// and rises with blurred brightness, so contours bend around snowfields and
+// gullies. terrain.ts runs gradient descent on the same function.
 float blurredLuminance(vec2 uv) {
   vec2 o = vec2(0.02, 0.03);
   return (luminance(texture2D(u_image, uv).rgb) * 2.0
@@ -143,59 +127,77 @@ float segmentDistance(vec2 p, vec2 a, vec2 b) {
   return length(pa - ba * h);
 }
 
-// Topographic contours and the descent path, drawn only on rock. Clouds and
-// mist are composited afterwards, so they drift over the lines.
-vec3 topography(vec2 uv, vec3 color, float rock) {
-  if (rock <= 0.001) return color;
-  float px = 1.0 / u_imageSize.x;
-  float h = height(uv);
-  float c = h * CONTOURS_PER_UNIT;
-  // c changes by w per image pixel; a line is drawn where c is within about
-  // one pixel of a whole number.
-  float w = (abs(height(uv + vec2(px, 0.0)) - h) + abs(height(uv + vec2(0.0, px)) - h)) * CONTOURS_PER_UNIT;
-  float f = abs(fract(c + 0.5) - 0.5);
-  float line = 1.0 - smoothstep(w * 0.6, w * 1.6 + 1e-4, f);
-  color = mix(color, vec3(1.0), line * 0.2 * rock * u_topo);
+void main() {
+  // One fragment per photo pixel; uv is image space with y down, matching
+  // how the photo texture is sampled.
+  vec2 uv = gl_FragCoord.xy / u_imageSize;
+  vec3 color = texture2D(u_image, uv).rgb;
+  float m = motionMask(uv, color);
+  float ridge = ridgeAt(clamp(uv.x, 0.0, 1.0));
+  float rock = smoothstep(ridge - 0.004, ridge + 0.012, uv.y) * (1.0 - m) * (1.0 - smoothstep(0.86, 0.93, uv.y));
 
-  // The descent, drawn step by step down the right-hand mountain.
-  vec3 accent = vec3(0.949, 0.604, 0.29);
-  float d = 1e5;
-  float dot_ = 1e5;
-  for (int s = 0; s < 15; s++) {
-    float k = float(s);
-    if (k < u_pathDrawn) {
+  if (rock > 0.001) {
+    // Contours: c changes by w per pixel; a line is drawn where c is within
+    // about one pixel of a whole number.
+    float px = 1.0 / u_imageSize.x;
+    float h = height(uv);
+    float c = h * CONTOURS_PER_UNIT;
+    float w = (abs(height(uv + vec2(px, 0.0)) - h) + abs(height(uv + vec2(0.0, px)) - h)) * CONTOURS_PER_UNIT;
+    float f = abs(fract(c + 0.5) - 0.5);
+    float line = 1.0 - smoothstep(w * 0.6, w * 1.6 + 1e-4, f);
+    color = mix(color, vec3(1.0), line * 0.2 * rock);
+
+    // The descent down the right-hand mountain, with a dot at each step.
+    vec3 accent = vec3(0.949, 0.604, 0.29);
+    float d = 1e5;
+    float dot_ = 1e5;
+    for (int s = 0; s < 15; s++) {
       vec2 a = PATH_POINT(s);
-      vec2 b = mix(a, PATH_POINT(s + 1), clamp(u_pathDrawn - k, 0.0, 1.0));
-      d = min(d, segmentDistance(uv, a, b));
+      d = min(d, segmentDistance(uv, a, PATH_POINT(s + 1)));
       dot_ = min(dot_, length((uv - a) * u_imageSize));
     }
+    color = mix(color, accent, (1.0 - smoothstep(1.0, 2.2, d)) * 0.9 * rock);
+    color = mix(color, accent, (1.0 - smoothstep(2.5, 4.0, dot_)) * 0.9 * rock);
   }
-  color = mix(color, accent, (1.0 - smoothstep(1.0, 2.2, d)) * 0.9 * rock);
-  color = mix(color, accent, (1.0 - smoothstep(2.5, 4.0, dot_)) * 0.9 * rock);
-  return color;
+  gl_FragColor = vec4(color, m);
+}
+`;
+
+export const SKY_SHADER = `${COMMON}
+uniform sampler2D u_scene;   // the baked texture: landscape RGB, motion mask in alpha
+uniform vec2 u_resolution;   // canvas size in pixels
+uniform vec2 u_imageSize;    // background.jpg size in pixels
+uniform float u_time;        // seconds since start; frozen for reduced motion
+uniform float u_pixel;       // block size of the pooled resolve; 1 is sharp
+uniform float u_feature;     // 1 shows the Sobel feature map
+uniform float u_zoom;        // slow drift, 1.00 to 1.01
+uniform float u_showMask;    // debug: tint the moving regions red
+uniform vec3 u_grade;        // time-of-day colour grade for the visitor's local hour
+uniform float u_night;       // 0 by day, 1 at night: stars come out
+
+// Screen position (0..1, y down) to image coordinates, cropping like
+// background-size: cover, then zooming about the centre.
+vec2 coverUv(vec2 screen) {
+  float screenAspect = u_resolution.x / u_resolution.y;
+  float imageAspect = u_imageSize.x / u_imageSize.y;
+  vec2 scale = screenAspect > imageAspect
+    ? vec2(1.0, imageAspect / screenAspect)
+    : vec2(screenAspect / imageAspect, 1.0);
+  return (screen - 0.5) * scale / u_zoom + 0.5;
 }
 
 vec3 liveColor(vec2 uv) {
   float t = u_time;
-  vec3 still = texture2D(u_image, uv).rgb;
-  float m = motionMask(uv, still);
+  float m = texture2D(u_scene, uv).a;
 
-  // Two levels of domain-warped noise make a slowly folding flow field.
+  // A slowly folding flow field: one level of noise, warped by a second.
   vec2 q = uv * vec2(3.2, 5.0);
   vec2 flow = vec2(
     fbm(q + vec2(t * 0.032, t * 0.006)),
     fbm(q + vec2(5.2, 1.3) - vec2(t * 0.021, -t * 0.004)));
-  vec2 warp = vec2(
-    fbm(q + 2.6 * flow + vec2(t * 0.018, 0.0)),
-    fbm(q + 2.6 * flow + vec2(3.1, 7.4) - vec2(0.0, t * 0.012)));
-  vec2 offset = (warp - 0.5) * vec2(0.022, 0.012) * m;
-  vec3 color = texture2D(u_image, uv + offset).rgb;
-
-  // The topography sits on the rock; where the sky or mist moves, the cloud
-  // texture replaces it, so the weather passes over the lines.
-  float ridge = ridgeAt(clamp(uv.x, 0.0, 1.0));
-  float rock = smoothstep(ridge - 0.004, ridge + 0.012, uv.y) * (1.0 - m) * (1.0 - smoothstep(0.86, 0.93, uv.y));
-  color = topography(uv, color, rock);
+  float warp = fbm(q + 2.6 * flow + vec2(t * 0.018, 0.0));
+  vec2 offset = (vec2(warp, flow.y) - 0.5) * vec2(0.022, 0.012) * m;
+  vec3 color = texture2D(u_scene, uv + offset).rgb;
 
   // A faint layer of mist sliding across the moving regions.
   float fog = fbm(uv * vec2(3.5, 7.0) + flow * 1.4 + vec2(-t * 0.026, t * 0.003));
@@ -203,12 +205,11 @@ vec3 liveColor(vec2 uv) {
 
   // The sunset light breathes very slightly where the image is warm.
   float warm = smoothstep(0.08, 0.32, color.r - color.b);
-  color *= 1.0 + warm * 0.05 * sin(t * 0.22 + fbm(uv * 2.0 + t * 0.015) * 6.2831);
+  color *= 1.0 + warm * 0.05 * sin(t * 0.22 + uv.x * 3.1 + uv.y * 4.7);
 
-  // Time of day: the whole scene is graded for the visitor's local hour, and
-  // at night a few stars twinkle in the clear sky above the cloud bank.
+  // Time of day, and stars in the clear upper sky at night.
   color *= u_grade;
-  float clearSky = (1.0 - smoothstep(ridge - 0.035, ridge - 0.006, uv.y)) * (1.0 - smoothstep(0.22, 0.34, uv.y));
+  float clearSky = m * (1.0 - smoothstep(0.22, 0.34, uv.y));
   vec2 cell = floor(uv * u_imageSize / 3.0);
   float star = step(0.9972, hash(cell)) * (0.55 + 0.45 * sin(t * 1.7 + hash(cell + 7.0) * 6.2831));
   color += vec3(0.9, 0.93, 1.0) * star * clearSky * u_night * (1.0 - smoothstep(0.45, 0.8, fog));
@@ -227,12 +228,12 @@ void main() {
     vec2 screen = frag / u_resolution - 0.5;
     float vignette = 1.0 - smoothstep(0.35, 0.95, length(screen * vec2(1.0, 0.85))) * 0.45;
     float dither = (hash(gl_FragCoord.xy) - 0.5) / 255.0;
-    gl_FragColor = vec4(liveColor(uv) * vignette * u_bright + dither, 1.0);
+    gl_FragColor = vec4(liveColor(uv) * vignette + dither, 1.0);
     return;
   }
 
   // Feature-map mode: the two 3×3 Sobel kernels convolved over the live
-  // image's luminance, one device pixel apart, magnitude sqrt(Gx² + Gy²).
+  // image's luminance, one pixel apart, magnitude sqrt(Gx² + Gy²).
   vec2 texel = (coverUv((frag + vec2(1.0, 1.0)) / u_resolution) - uv);
   float tl = luminance(liveColor(uv + vec2(-texel.x, -texel.y)));
   float tc = luminance(liveColor(uv + vec2(0.0, -texel.y)));

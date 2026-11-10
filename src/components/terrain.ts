@@ -5,7 +5,6 @@
 // gradient with momentum, down the slope the contours show, clear of the name.
 
 export const PATH_POINTS = 16;
-export const PATH_SEGMENTS = PATH_POINTS - 1;
 
 const START = { x: 0.865, y: 0.535 };
 const STEP = 0.014;

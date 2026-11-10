@@ -6,7 +6,8 @@ import styles from "./SGMark.module.css";
 // With xor set (the top bar), hovering the mark flips it to the XOR problem:
 // two classes on opposite corners, which no single straight line separates.
 // The two dashed lines are the boundary a network with one hidden layer of
-// two units draws, the classic reason hidden layers exist.
+// two units draws: a band around one diagonal, the classic reason hidden
+// layers exist. The points are drawn after the lines, on top of them.
 export function SGMark({ size, xor = false }: { size: number; xor?: boolean }) {
   return (
     <svg
@@ -35,8 +36,10 @@ export function SGMark({ size, xor = false }: { size: number; xor?: boolean }) {
       </text>
       {xor ? (
         <g className={styles.problem}>
-          <line x1="16" y1="44" x2="44" y2="16" className={styles.boundary} />
-          <line x1="44" y1="72" x2="72" y2="44" className={styles.boundary} />
+          {/* Both boundaries run parallel to the diagonal through the filled
+              points, one on each side, so they fence that class in. */}
+          <line x1="12" y1="26" x2="60" y2="74" className={styles.boundary} />
+          <line x1="26" y1="12" x2="74" y2="60" className={styles.boundary} />
           <circle cx="30" cy="30" r="5" className={styles.classA} />
           <circle cx="58" cy="58" r="5" className={styles.classA} />
           <circle cx="58" cy="30" r="5" className={styles.classB} />
