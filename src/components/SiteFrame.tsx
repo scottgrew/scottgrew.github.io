@@ -9,6 +9,7 @@ import { COLUMN_DONE, NAME_DONE, SKY_RESOLVING, after, introSeen, listenForSkipI
 import { InfoLine } from "./InfoLine";
 import { Shortcuts } from "./Shortcuts";
 import { NameCloud } from "./NameCloud";
+import { SocialLink } from "./SocialLink";
 import { SGMark } from "./SGMark";
 import { SkipConnection } from "./SkipConnection";
 import styles from "./SiteFrame.module.css";
@@ -88,9 +89,7 @@ function HomeColumn({ current }: { current: string }) {
       <ul className={`${styles.socials} ${styles.step} ${styles.s6}`}>
         {home.links.map((link) => (
           <li key={link.href}>
-            <a href={link.href} rel="noopener noreferrer" target="_blank">
-              {link.label}
-            </a>
+            <SocialLink link={link} />
           </li>
         ))}
       </ul>

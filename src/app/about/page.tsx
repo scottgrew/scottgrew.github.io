@@ -1,4 +1,5 @@
 import { Page } from "@/components/Page";
+import { SocialLink } from "@/components/SocialLink";
 import { about, home } from "@/content/site";
 import { buildMetadata } from "@/lib/metadata";
 import styles from "./about.module.css";
@@ -14,9 +15,7 @@ export default function AboutPage() {
       <ul className={styles.links}>
         {home.links.map((link) => (
           <li key={link.href}>
-            <a href={link.href} rel="noopener noreferrer" target="_blank">
-              {link.label} ↗
-            </a>
+            <SocialLink link={link} arrow />
           </li>
         ))}
       </ul>

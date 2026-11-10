@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const PAGES = ["/", "/throughline/", "/motionnet/", "/showdown/", "/about/", "/cv/"];
+const PAGES = ["/", "/throughline/", "/motionnet/", "/showdown/", "/about/", "/cv/", "/contact/"];
 const WIDTHS = [375, 768, 1280, 1920];
 const SHOTS = process.env.SHOT_DIR;
 
@@ -161,4 +161,19 @@ test("the CV page offers the site resume, which carries no contact details", asy
 test("project pages end with the footer", async ({ page }) => {
   await page.goto("/showdown/");
   await expect(page.locator("main footer")).toContainText("Updated");
+});
+
+test("contact is linked beside GitHub and the form checks its fields before sending", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForTimeout(800);
+  await page.getByRole("link", { name: "Contact", exact: true }).first().click();
+  await expect(page.getByRole("heading", { level: 1, name: "Contact" })).toBeVisible();
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText("Please add your name.")).toBeVisible();
+  await expect(page.getByText("That email address doesn't look right.")).toBeVisible();
+  await page.getByLabel("Name").fill("Test Visitor");
+  await page.getByLabel("Email").fill("visitor@example.com");
+  await page.getByLabel("Message").fill("Hello, this is a test message.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("status")).toContainText(/isn't connected yet|on its way/);
 });

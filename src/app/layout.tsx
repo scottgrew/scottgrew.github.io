@@ -39,7 +39,8 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self'",
+  // The contact form posts to Web3Forms; nothing else leaves the site.
+  "connect-src 'self' https://api.web3forms.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'none'",

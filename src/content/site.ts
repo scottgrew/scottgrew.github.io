@@ -20,7 +20,19 @@ export const home = {
   links: [
     { label: "GitHub", href: github },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/scottgrew" },
+    { label: "Contact", href: "/contact/" },
   ] satisfies SiteLink[],
+};
+
+// The contact form posts to Web3Forms, which forwards each message to
+// Scott's inbox. The access key only lets visitors send to that inbox, so it
+// is safe in the page. Until it is filled in, the form says it isn't
+// connected instead of pretending to send.
+export const contact = {
+  title: "Contact",
+  intro: "Send me a message and it comes straight to my inbox.",
+  endpoint: "https://api.web3forms.com/submit",
+  accessKey: "",
 };
 
 export const about = {

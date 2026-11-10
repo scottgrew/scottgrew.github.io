@@ -1,0 +1,102 @@
+.form {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.field span {
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--hairline);
+  background: rgba(12, 14, 18, 0.55);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--body-size);
+  font-weight: 300;
+  resize: vertical;
+  transition: border-color var(--fast) ease;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: #e0654d;
+}
+
+.field em {
+  font-style: normal;
+  font-size: 0.85rem;
+  color: #f0a08f;
+}
+
+.trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.actions button {
+  min-height: 2.85rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color var(--fast) ease, color var(--fast) ease;
+}
+
+.actions button:hover,
+.actions button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.actions button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #f0a08f;
+}
+
+.sent {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--accent);
+  color: var(--text);
+}

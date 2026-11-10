@@ -1,5 +1,6 @@
 import { home } from "@/content/site";
 import { SGMark } from "./SGMark";
+import { SocialLink } from "./SocialLink";
 import styles from "./Footer.module.css";
 
 // Stamped when the site is built, so it is the date the deployed copy was made.
@@ -15,9 +16,7 @@ export function Footer() {
       <ul className={styles.links}>
         {home.links.map((link) => (
           <li key={link.href}>
-            <a href={link.href} rel="noopener noreferrer" target="_blank">
-              {link.label} ↗
-            </a>
+            <SocialLink link={link} arrow />
           </li>
         ))}
       </ul>
