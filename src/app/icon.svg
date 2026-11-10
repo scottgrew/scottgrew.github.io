@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" role="img" aria-label="Scott Grew">
+  <rect width="88" height="88" fill="#1b1f22"/>
+  <circle cx="44" cy="44" r="43.5" fill="none" stroke="#ffffff" stroke-width="1"/>
+  <text x="44" y="46" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="3">SG</text>
+</svg>

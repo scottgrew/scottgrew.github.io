@@ -1,0 +1,39 @@
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.pagerLink {
+  color: var(--text);
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  position: relative;
+}
+
+.pagerLink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0.35rem;
+  height: 1px;
+  width: 0;
+  background: var(--accent);
+  transition: width 200ms ease;
+}
+
+.pagerLink:hover::after,
+.pagerLink:focus-visible::after {
+  width: 100%;
+}
+
+.sub {
+  color: var(--text-secondary);
+  margin-left: 0.35rem;
+}

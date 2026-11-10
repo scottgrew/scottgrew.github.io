@@ -1,0 +1,99 @@
+
+.pageShell {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem 3rem;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+}
+
+.panel {
+  width: 100%;
+  max-width: 44rem;
+  background: rgba(27, 31, 34, 0.85);
+  padding: 2.5rem 2.5rem 1.5rem;
+  position: relative;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  box-sizing: border-box;
+  opacity: 0;
+  transform: translateY(0.75rem);
+  filter: blur(4px);
+}
+
+.panelEnter {
+  animation: panelIn 325ms ease-out forwards;
+}
+
+@keyframes panelIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: background-color 200ms ease;
+}
+
+.close:hover,
+.close:focus-visible {
+  background: var(--hover-fill);
+}
+
+.heading {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.15rem, 0.4rem + 2vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: clamp(0.3rem, 0.1rem + 0.5vw, 0.5rem);
+  text-transform: uppercase;
+  display: inline-block;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.body {
+  font-size: clamp(0.95rem, 0.85rem + 0.4vw, 1rem);
+  font-weight: 300;
+  line-height: 1.65;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 2rem;
+}
+
+.links > * + * {
+  margin-left: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panelEnter {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    animation: none;
+  }
+}

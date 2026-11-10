@@ -1,0 +1,96 @@
+
+.stack {
+  margin: 0 0 1.25rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.2rem;
+}
+
+.summary {
+  margin: 0 0 1.75rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.2rem;
+  text-transform: uppercase;
+}
+
+.paragraph {
+  margin: 0 0 1rem;
+}
+
+.item {
+  margin: 0 0 1rem;
+}
+
+.itemTitle {
+  font-weight: 600;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+  max-width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--rule);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.table th:not(:first-child),
+.table td:not(:first-child) {
+  text-align: right;
+}
+
+.caption {
+  margin: 0.5rem 0 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.commands {
+  border: 1px solid var(--rule);
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  font-family: var(--font-mono-family);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.commands div + div {
+  margin-top: 0.25rem;
+}
+
+.demo {
+  margin: 0 0 1rem;
+  width: 100%;
+}
+
+.demo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.demoCaption {
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}

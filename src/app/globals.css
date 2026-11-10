@@ -1,0 +1,63 @@
+
+:root {
+  --bg: #1b1f22;
+  --text: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --rule: #ffffff;
+  --hover-fill: rgba(255, 255, 255, 0.075);
+  --accent: #f29a4a;
+  --font-sans-family: var(--font-plex-sans), sans-serif;
+  --font-mono-family: var(--font-plex-mono), monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans-family);
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono-family);
+  font-variant-numeric: tabular-nums;
+}
+
+.sgMarkText {
+  font-family: var(--font-sans-family);
+  font-weight: 600;
+  font-size: 1.35rem;
+  letter-spacing: 0.15em;
+  fill: currentColor;
+}
+
+.homeMark {
+  width: 5.5rem;
+  height: 5.5rem;
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
