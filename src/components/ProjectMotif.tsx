@@ -48,9 +48,8 @@ function PathFan() {
         <path
           key={y}
           d={`M 10 120 C 90 120, 140 ${(120 + y) / 2}, 230 ${y}`}
-          className={i === 0 ? styles.accentDraw : styles.faintDraw}
-          style={{ opacity: i === 0 ? 1 : p, animationDelay: `${0.4 + i * 0.12}s` }}
-          pathLength={1}
+          className={i === 0 ? styles.accent : styles.faint}
+          style={{ opacity: i === 0 ? 1 : p }}
         />
       ))}
       <circle cx={10} cy={120} r={3} className={styles.dot} />
