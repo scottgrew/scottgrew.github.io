@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { projects, type Project } from "@/content/site";
 import { Page } from "./Page";
+import { ProjectMotif } from "./ProjectMotif";
 import styles from "./ProjectView.module.css";
 
 export function ProjectView({ project }: { project: Project }) {
@@ -9,7 +10,7 @@ export function ProjectView({ project }: { project: Project }) {
   const next = projects[index + 1];
 
   return (
-    <Page label={project.stack} title={project.title}>
+    <Page title={project.title} motif={<ProjectMotif slug={project.slug} />}>
       {project.demo ? (
         <figure className={styles.demo}>
           {/* A GIF in a static export: next/image would add nothing here. */}

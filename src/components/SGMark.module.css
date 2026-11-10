@@ -1,0 +1,35 @@
+.initials,
+.problem {
+  transition: opacity 280ms ease;
+}
+
+.problem {
+  opacity: 0;
+}
+
+a:hover > .xor .initials,
+a:focus-visible > .xor .initials {
+  opacity: 0;
+}
+
+a:hover > .xor .problem,
+a:focus-visible > .xor .problem {
+  opacity: 1;
+}
+
+.boundary {
+  stroke: currentColor;
+  stroke-opacity: 0.6;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.classA {
+  fill: var(--accent);
+}
+
+.classB {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}

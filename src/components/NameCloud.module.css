@@ -1,0 +1,16 @@
+.cloud {
+  position: relative;
+}
+
+/* The text keeps the heading's size and stays for screen readers; once the
+   point cloud is drawn, it is made transparent so only the points show. */
+.cloud[data-cloud="ready"] {
+  color: transparent;
+  text-shadow: none;
+}
+
+.canvas {
+  position: absolute;
+  top: -48px;
+  pointer-events: none;
+}

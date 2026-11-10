@@ -7,7 +7,6 @@ export type SiteLink = { label: string; href: string };
 export type Project = {
   slug: string;
   title: string;
-  stack: string;
   demo?: { src: string; alt: string; caption: string };
   body: string[];
   code: string;
@@ -35,7 +34,6 @@ export const projects: Project[] = [
   {
     slug: "throughline",
     title: "Throughline",
-    stack: "C++ · Eigen · Docker",
     demo: {
       src: "/media/throughline-turn.gif",
       alt: "Tracked cars shown as blue boxes moving through a turn, each with a line ahead of it showing where it is expected to go",
@@ -51,7 +49,6 @@ export const projects: Project[] = [
   {
     slug: "motionnet",
     title: "MotionNet",
-    stack: "Python · PyTorch · Docker",
     body: [
       "MotionNet watches one second of a real street scene and predicts where every car, cyclist and pedestrian will be over the next eight seconds.",
       "A car at a junction might turn or go straight, and averaging the two gives a path through the curb. So instead of one guess, it gives six possible paths and how likely each one is.",
@@ -62,7 +59,6 @@ export const projects: Project[] = [
   {
     slug: "showdown",
     title: "Showdown",
-    stack: "C++20",
     body: [
       "Showdown taught itself a small two-player poker game that AI researchers use as a test, by playing against itself hundreds of millions of times.",
       "In poker you can't see the other player's cards, so a good strategy has to hold up even against an opponent who knows exactly how you play. I measure that directly: how much a perfect opponent could win per hand.",

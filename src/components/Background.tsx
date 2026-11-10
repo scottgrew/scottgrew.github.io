@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { descendMountain, PATH_SEGMENTS, PATH_STAGGER, packRidge } from "./terrain";
 import { FRAGMENT_SHADER, RIDGE, VERTEX_SHADER } from "./skyShader";
 import styles from "./Background.module.css";
 
@@ -13,14 +14,18 @@ const KONAMI = [
 
 // Pooled load: block sizes in CSS pixels, each held for STEP_MS, from coarse
 // "max-pooled" squares down to the sharp image.
-const POOL_BLOCKS = [48, 32, 16, 8, 4, 2, 1];
-const STEP_MS = 140;
+const POOL_BLOCKS = [64, 48, 32, 16, 8, 4, 2, 1];
+const STEP_MS = 160;
 
 // Device-pixel cap keeps the shader cheap on large high-DPI screens; the
 // feature map samples the scene nine times per pixel, so it runs at half that.
 const MAX_DPR = 1.5;
 const FEATURE_RESOLUTION = 0.5;
 const DRIFT_PERIOD_S = 30;
+
+// The gradient-descent path starts drawing once the sky is sharp.
+const PATH_DELAY_S = 1.8;
+const PATH_DRAW_S = 4;
 
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
@@ -94,8 +99,10 @@ export function Background() {
       zoom: at("u_zoom"),
       showMask: at("u_showMask"),
       ridge: at("u_ridge"),
+      paths: at("u_paths"),
+      pathDrawn: at("u_pathDrawn"),
     };
-    gl.uniform1fv(u.ridge, new Float32Array(RIDGE));
+    gl.uniform4fv(u.ridge, packRidge(RIDGE));
     gl.uniform1f(u.showMask, window.location.hash === "#sky-mask" ? 1 : 0);
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -123,6 +130,8 @@ export function Background() {
       gl.uniform1f(u.zoom, 1 + 0.01 * drift);
       gl.uniform1f(u.pixel, POOL_BLOCKS[poolStep] * dpr);
       gl.uniform1f(u.feature, featureRef.current ? 1 : 0);
+      const drawn = reducedMotion ? 1 : Math.min(1, Math.max(0, (seconds - PATH_DELAY_S) / PATH_DRAW_S));
+      gl.uniform1f(u.pathDrawn, drawn * (PATH_SEGMENTS + PATH_STAGGER));
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (!reducedMotion) frame = requestAnimationFrame(draw);
     };
@@ -142,6 +151,7 @@ export function Background() {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.uniform2f(u.imageSize, image.naturalWidth, image.naturalHeight);
+      gl.uniform4fv(u.paths, descendMountain(image));
       resize();
       setRenderer("webgl");
       frame = requestAnimationFrame(draw);
@@ -187,7 +197,6 @@ export function Background() {
       aria-hidden="true"
     >
       <canvas ref={canvasRef} className={styles.canvas} />
-      <div className={styles.vignette} />
       {feature ? (
         <p className={styles.featureLabel}>conv1 · sobel 3×3 · 2 kernels</p>
       ) : null}

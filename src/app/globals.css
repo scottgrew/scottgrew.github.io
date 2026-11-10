@@ -13,12 +13,13 @@
 
   --font-sans-family: var(--font-plex-sans), system-ui, sans-serif;
   --font-mono-family: var(--font-plex-mono), ui-monospace, monospace;
+  --font-display-family: var(--font-archivo), var(--font-plex-sans), sans-serif;
 
   /* Type: body, the small spaced label, and the spaced display heading. */
   --body-size: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
   --label-size: 0.72rem;
   --label-track: 0.22em;
-  --display-track: 0.32em;
+  --display-track: 0.18em;
 
   /* Spacing steps. */
   --space-1: 0.5rem;

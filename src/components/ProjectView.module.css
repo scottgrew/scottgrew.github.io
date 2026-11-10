@@ -38,11 +38,30 @@
 }
 
 .pager {
+  position: relative;
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-5);
   padding-top: var(--space-3);
   border-top: 1px solid var(--hairline);
+}
+
+/* Easter egg: the edge-detection kernel [−1, 0, 1] drawn as three ticks on
+   the divider: −1 hangs below the line, 0 sits on it, 1 stands above it. */
+.pager::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 25px;
+  height: 11px;
+  transform: translateX(-50%);
+  background-image: linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent)),
+    linear-gradient(var(--accent), var(--accent));
+  background-size: 1px 6px, 5px 1px, 1px 6px;
+  background-position: 0 5px, 10px 5px, 24px 0;
+  background-repeat: no-repeat;
 }
 
 .pagerLink {

@@ -31,7 +31,12 @@ uniform float u_pixel;       // block size of the pooled load; 1 is sharp
 uniform float u_feature;     // 1 shows the Sobel feature map
 uniform float u_zoom;        // slow drift, 1.00 to 1.01
 uniform float u_showMask;    // debug: tint the moving regions red
-uniform float u_ridge[21];
+uniform vec4 u_ridge[6];      // RIDGE packed four to a vector (21 used)
+uniform vec4 u_paths[16];     // 2 descents × 16 steps, two points per vector, image space
+uniform float u_pathDrawn;    // segments drawn so far on the first descent (fractional)
+
+const float CONTOURS_PER_UNIT = 5.5;
+const float PATH_STAGGER = 4.0;
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -56,13 +61,29 @@ float fbm(vec2 p) {
   return sum;
 }
 
+// The ridge and path arrays are packed into vec4s: phone GPUs allow few
+// fragment uniform vectors, and every array element costs a whole vector.
+// GLSL ES 1.0 only indexes uniform arrays by loop indices and constants, so
+// the array reads are macros expanded inside the loops, and the helpers only
+// pick a component out of a vector they are handed.
+float pick4(vec4 v, int c) {
+  return c == 0 ? v.x : c == 1 ? v.y : c == 2 ? v.z : v.w;
+}
+
+vec2 pick2(vec4 v, int c) {
+  return c == 0 ? v.xy : v.zw;
+}
+
+#define RIDGE_VALUE(k) pick4(u_ridge[(k) / 4], (k) - ((k) / 4) * 4)
+#define PATH_POINT(j) pick2(u_paths[(j) / 2], (j) - ((j) / 2) * 2)
+
 // Linear interpolation of the traced ridgeline at image x.
 float ridgeAt(float x) {
-  float r = u_ridge[0];
+  float r = u_ridge[0].x;
   for (int k = 0; k < 20; k++) {
     float x0 = float(k) / 20.0;
     if (x >= x0 && x <= x0 + 0.05) {
-      r = mix(u_ridge[k], u_ridge[k + 1], (x - x0) * 20.0);
+      r = mix(RIDGE_VALUE(k), RIDGE_VALUE(k + 1), (x - x0) * 20.0);
     }
   }
   return r;
@@ -94,6 +115,69 @@ float motionMask(vec2 uv, vec3 still) {
   return clamp(max(sky, max(mist, haze)), 0.0, 1.0);
 }
 
+// The rock as a loss surface. Height falls with distance below the traced
+// ridgeline and rises with the (blurred) brightness of snow and lit rock, so
+// contours bend around snowfields and gullies. terrain.ts computes the same
+// function on the CPU to run gradient descent down it.
+float blurredLuminance(vec2 uv) {
+  vec2 o = vec2(0.02, 0.03);
+  return (luminance(texture2D(u_image, uv).rgb) * 2.0
+        + luminance(texture2D(u_image, uv + vec2(o.x, 0.0)).rgb)
+        + luminance(texture2D(u_image, uv - vec2(o.x, 0.0)).rgb)
+        + luminance(texture2D(u_image, uv + vec2(0.0, o.y)).rgb)
+        + luminance(texture2D(u_image, uv - vec2(0.0, o.y)).rgb)) / 6.0;
+}
+
+float height(vec2 uv) {
+  return -(uv.y - ridgeAt(clamp(uv.x, 0.0, 1.0))) * 3.0 + blurredLuminance(uv) * 2.0;
+}
+
+// Distance in image pixels from p to the segment a–b.
+float segmentDistance(vec2 p, vec2 a, vec2 b) {
+  vec2 pa = (p - a) * u_imageSize;
+  vec2 ba = (b - a) * u_imageSize;
+  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
+  return length(pa - ba * h);
+}
+
+// Topographic contours and the descent path, drawn only on rock. Clouds and
+// mist are composited afterwards, so they drift over the lines.
+vec3 topography(vec2 uv, vec3 color, float rock) {
+  if (rock <= 0.001) return color;
+  float px = 1.0 / u_imageSize.x;
+  float h = height(uv);
+  float c = h * CONTOURS_PER_UNIT;
+  // c changes by w per image pixel; a line is drawn where c is within about
+  // one pixel of a whole number.
+  float w = (abs(height(uv + vec2(px, 0.0)) - h) + abs(height(uv + vec2(0.0, px)) - h)) * CONTOURS_PER_UNIT;
+  float f = abs(fract(c + 0.5) - 0.5);
+  float line = 1.0 - smoothstep(w * 0.6, w * 1.6 + 1e-4, f);
+  color = mix(color, vec3(1.0), line * 0.2 * rock);
+
+  // Two descents, one each side of the name, like training runs from
+  // different random starts; the second begins PATH_STAGGER segments after
+  // the first and is drawn a little fainter.
+  vec3 accent = vec3(0.949, 0.604, 0.29);
+  for (int i = 0; i < 2; i++) {
+    float drawn = u_pathDrawn - float(i) * PATH_STAGGER;
+    float strength = i == 0 ? 0.95 : 0.7;
+    float d = 1e5;
+    float dot_ = 1e5;
+    for (int s = 0; s < 15; s++) {
+      float k = float(s);
+      if (k < drawn) {
+        vec2 a = PATH_POINT(i * 16 + s);
+        vec2 b = mix(a, PATH_POINT(i * 16 + s + 1), clamp(drawn - k, 0.0, 1.0));
+        d = min(d, segmentDistance(uv, a, b));
+        dot_ = min(dot_, length((uv - a) * u_imageSize));
+      }
+    }
+    color = mix(color, accent, (1.0 - smoothstep(1.0, 2.2, d)) * strength * rock);
+    color = mix(color, accent, (1.0 - smoothstep(2.5, 4.0, dot_)) * strength * rock);
+  }
+  return color;
+}
+
 vec3 liveColor(vec2 uv) {
   float t = u_time;
   vec3 still = texture2D(u_image, uv).rgb;
@@ -109,6 +193,12 @@ vec3 liveColor(vec2 uv) {
     fbm(q + 2.6 * flow + vec2(3.1, 7.4) - vec2(0.0, t * 0.012)));
   vec2 offset = (warp - 0.5) * vec2(0.022, 0.012) * m;
   vec3 color = texture2D(u_image, uv + offset).rgb;
+
+  // The topography sits on the rock; where the sky or mist moves, the cloud
+  // texture replaces it, so the weather passes over the lines.
+  float ridge = ridgeAt(clamp(uv.x, 0.0, 1.0));
+  float rock = smoothstep(ridge - 0.004, ridge + 0.012, uv.y) * (1.0 - m) * (1.0 - smoothstep(0.86, 0.93, uv.y));
+  color = topography(uv, color, rock);
 
   // A faint layer of mist sliding across the moving regions.
   float fog = fbm(uv * vec2(3.5, 7.0) + flow * 1.4 + vec2(-t * 0.026, t * 0.003));
@@ -129,7 +219,10 @@ void main() {
   vec2 uv = coverUv(frag / u_resolution);
 
   if (u_feature < 0.5) {
-    gl_FragColor = vec4(liveColor(uv), 1.0);
+    vec2 screen = frag / u_resolution - 0.5;
+    float vignette = 1.0 - smoothstep(0.35, 0.95, length(screen * vec2(1.0, 0.85))) * 0.45;
+    float dither = (hash(gl_FragCoord.xy) - 0.5) / 255.0;
+    gl_FragColor = vec4(liveColor(uv) * vignette + dither, 1.0);
     return;
   }
 

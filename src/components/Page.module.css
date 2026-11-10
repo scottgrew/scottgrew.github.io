@@ -5,6 +5,19 @@
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
 
+.head {
+  position: relative;
+}
+
+.motif {
+  position: absolute;
+  right: 0;
+  bottom: 0.25rem;
+  width: 15rem;
+  height: 9.4rem;
+  pointer-events: none;
+}
+
 .label {
   margin: 0 0 var(--space-2);
   font-family: var(--font-mono-family);
@@ -19,8 +32,10 @@
   margin: 0;
   padding: 0 0 var(--space-2);
   border-bottom: 1px solid var(--accent);
+  font-family: var(--font-display-family);
   font-size: clamp(2rem, 1.1rem + 3.4vw, 3.4rem);
-  font-weight: 600;
+  font-weight: 800;
+  font-stretch: 125%;
   letter-spacing: var(--display-track);
   line-height: 1.1;
   text-transform: uppercase;
@@ -50,6 +65,13 @@
   }
 
   .title {
-    letter-spacing: 0.2em;
+    letter-spacing: 0.1em;
+  }
+
+  .motif {
+    position: static;
+    width: 12rem;
+    height: 7.5rem;
+    margin-top: var(--space-3);
   }
 }

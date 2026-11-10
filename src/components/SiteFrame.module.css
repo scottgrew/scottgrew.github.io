@@ -36,6 +36,9 @@
 /* ---------- Home column ---------- */
 
 .homeFrame {
+  /* The haze and the name's scatter area reach past the column; clip them at
+     the screen edge so a phone never scrolls sideways. */
+  overflow-x: clip;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,20 +69,34 @@
 }
 
 .box {
-  max-width: 40rem;
+  position: relative;
+  max-width: 44rem;
   padding: 2.75rem 2.25rem;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
 }
 
+/* A soft dark haze behind the name, so the point cloud holds its contrast
+   against the snow without hiding the mountain. */
+.box::before {
+  content: "";
+  position: absolute;
+  inset: -1.5rem -4rem;
+  z-index: -1;
+  background: radial-gradient(ellipse at center, rgba(10, 12, 15, 0.55) 0%, rgba(10, 12, 15, 0.3) 45%, rgba(10, 12, 15, 0) 72%);
+  pointer-events: none;
+}
+
 .name {
   margin: 0 0 1.25rem;
-  padding-left: 0.5em;
-  font-size: clamp(1.6rem, 1rem + 2.6vw, 2.5rem);
-  font-weight: 600;
-  letter-spacing: 0.5em;
+  padding-left: 0.2em;
+  font-family: var(--font-display-family);
+  font-size: clamp(1.7rem, 0.9rem + 2.9vw, 2.9rem);
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  line-height: 1.2;
+  line-height: 1.15;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
 }
 
@@ -123,6 +140,40 @@
 .navLink:hover,
 .navLink:focus-visible {
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* Easter egg: hovering a home button grows two faint squares around it, the
+   way a stacked convolution's receptive field widens layer by layer. */
+.nav .navLink {
+  position: relative;
+}
+
+.nav .navLink:hover,
+.nav .navLink:focus-visible {
+  z-index: 1;
+}
+
+.nav .navLink::before,
+.nav .navLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition: inset 320ms var(--ease), border-color 320ms ease;
+}
+
+.nav .navLink:hover::before,
+.nav .navLink:focus-visible::before {
+  inset: -7px;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.nav .navLink:hover::after,
+.nav .navLink:focus-visible::after {
+  inset: -14px;
+  border-color: rgba(255, 255, 255, 0.14);
+  transition-delay: 60ms;
 }
 
 .navLabel {
@@ -202,9 +253,11 @@
   color: var(--text);
   text-decoration: none;
   text-transform: uppercase;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.35em;
+  font-family: var(--font-display-family);
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.18em;
   white-space: nowrap;
 }
 
@@ -266,12 +319,13 @@
   }
 
   .box {
-    padding: 2rem 1rem;
+    padding: 2rem 0.75rem;
   }
 
   .name {
-    letter-spacing: 0.35em;
-    padding-left: 0.35em;
+    font-size: 1.5rem;
+    letter-spacing: 0.12em;
+    padding-left: 0.12em;
   }
 
   .nav {

@@ -108,7 +108,7 @@ for (const width of WIDTHS) {
     test.setTimeout(90_000);
     await page.setViewportSize({ width, height: width < 800 ? 812 : 900 });
     for (const path of PAGES) {
-      await page.goto(path);
+      await page.goto(path, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(2200);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       expect(overflow, `${path} at ${width}px`).toBeLessThanOrEqual(0);

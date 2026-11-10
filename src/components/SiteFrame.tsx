@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ViewTransition, useEffect, useRef, useState } from "react";
 import { home, navItems } from "@/content/site";
+import { Eggs } from "./Eggs";
+import { NameCloud } from "./NameCloud";
 import { SGMark } from "./SGMark";
 import { SkipConnection } from "./SkipConnection";
 import styles from "./SiteFrame.module.css";
@@ -39,11 +41,11 @@ function Nav({ current, compact }: { current: string; compact: boolean }) {
   );
 }
 
-function Mark({ size }: { size: number }) {
+function Mark({ size, xor = false }: { size: number; xor?: boolean }) {
   return (
     <ViewTransition name="site-mark">
       <Link href="/" className={styles.markLink} aria-label="Scott Grew, home">
-        <SGMark size={size} />
+        <SGMark size={size} xor={xor} />
       </Link>
     </ViewTransition>
   );
@@ -64,7 +66,7 @@ function HomeColumn({ current }: { current: string }) {
       <div ref={upperRef} className={`${styles.line} ${styles.step} ${styles.s2}`} />
       <div ref={boxRef} className={`${styles.box} ${styles.step} ${styles.s3}`}>
         <ViewTransition name="site-name">
-          <h1 className={styles.name}>{home.name}</h1>
+          <NameCloud text={home.name} className={styles.name} />
         </ViewTransition>
         <p className={styles.subtitle}>{home.subtitle}</p>
       </div>
@@ -89,7 +91,7 @@ function TopBar({ current }: { current: string }) {
   return (
     <div className={styles.bar}>
       <div className={styles.brand}>
-        <Mark size={40} />
+        <Mark size={40} xor />
         <ViewTransition name="site-name">
           <Link href="/" className={styles.barName}>
             {home.name}
@@ -118,6 +120,7 @@ export function SiteFrame({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className={styles.shade} data-view={isHome ? "home" : "page"} aria-hidden="true" />
+      <Eggs active={isHome} />
       <header
         className={`${styles.frame} ${isHome ? styles.homeFrame : styles.barFrame} ${
           intro ? styles.intro : ""

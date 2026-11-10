@@ -7,7 +7,7 @@ const PORT = 4174;
 export default defineConfig({
   testDir: "tests",
   fullyParallel: true,
-  workers: 2,
+  workers: 1,
   reporter: [["list"]],
   // Headless WebKit renders WebGL on the CPU, so the animated sky would load
   // the machine; tests run with reduced motion (one still frame) unless a
