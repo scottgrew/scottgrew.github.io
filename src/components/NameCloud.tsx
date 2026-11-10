@@ -22,6 +22,17 @@ const CURSOR_RADIUS = 56;
 const CURSOR_PUSH = 5.5;
 // Once settled and untouched, the shimmer is drawn at 30 frames a second.
 const IDLE_FRAME_MS = 1000 / 30;
+// The physics steps once per drawn frame, so the active rate is capped too:
+// a 120 or 144 Hz display would otherwise run it faster and at twice the cost.
+const ACTIVE_FRAME_MS = 1000 / 60;
+// Point opacity is rounded to one of these levels, so each frame reuses a
+// few colour strings instead of building one per point.
+const ALPHA_LEVELS = 16;
+const alphaStyles = (rgb: string) =>
+  Array.from({ length: ALPHA_LEVELS + 1 }, (_, i) => `rgba(${rgb},${(i / ALPHA_LEVELS).toFixed(3)})`);
+const WHITE_STYLES = alphaStyles("255,255,255");
+const WARM_STYLES = alphaStyles("242,154,74");
+const HALO_STYLE = "rgba(10,12,15,0.5)";
 const IDLE_AFTER_MS = 1200;
 
 // Each point's target is stored as a fraction of the heading's box. A resize
@@ -130,6 +141,9 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     let disposed = false;
     let lastDraw = 0;
     let lastActive = 0; // last cursor move or resize; the loop runs full speed after it
+    // The cursor in viewport coordinates; it is converted to canvas
+    // coordinates once per frame, not on every pointer event.
+    const pointer = { x: -1e4, y: -1e4 };
     const cursor = { x: -1e4, y: -1e4 };
 
     const targetX = (p: Point) => box.margin + p.nx * box.width;
@@ -176,6 +190,9 @@ export function NameCloud({ text, className }: { text: string; className?: strin
       }
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, width, height);
+      const origin = canvas.getBoundingClientRect();
+      cursor.x = pointer.x - origin.left;
+      cursor.y = pointer.y - origin.top;
 
       for (const p of points) {
         if (!instant && scanStart === Infinity) continue;
@@ -202,10 +219,11 @@ export function NameCloud({ text, className }: { text: string; className?: strin
         }
         const alpha = tx <= beam ? 0.82 + 0.18 * Math.sin(now / 340 + p.phase * 3) : 0.35;
         const s = size * p.scale;
-        // A faint dark halo under each point keeps it crisp over bright snow.
-        context.fillStyle = "rgba(10,12,15,0.5)";
+        // A faint dark halo under each point keeps it crisp over bright snow;
+        // the halos overlap and stack into the dark backing behind the letters.
+        context.fillStyle = HALO_STYLE;
         context.fillRect(p.x - 0.75, p.y - 0.75, s + 1.5, s + 1.5);
-        context.fillStyle = p.warm ? `rgba(242,154,74,${alpha})` : `rgba(255,255,255,${alpha})`;
+        context.fillStyle = (p.warm ? WARM_STYLES : WHITE_STYLES)[Math.round(alpha * ALPHA_LEVELS)];
         context.fillRect(p.x, p.y, s, s);
       }
 
@@ -222,20 +240,19 @@ export function NameCloud({ text, className }: { text: string; className?: strin
       if (disposed) return;
       frame = requestAnimationFrame(loop);
       const settled = announced && now - lastActive > IDLE_AFTER_MS;
-      if (settled && now - lastDraw < IDLE_FRAME_MS - 2) return;
+      if (now - lastDraw < (settled ? IDLE_FRAME_MS : ACTIVE_FRAME_MS) - 2) return;
       lastDraw = now;
       draw(now);
     };
 
     const onMove = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      cursor.x = event.clientX - rect.left;
-      cursor.y = event.clientY - rect.top;
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
       lastActive = performance.now();
     };
     const onLeave = () => {
-      cursor.x = -1e4;
-      cursor.y = -1e4;
+      pointer.x = -1e4;
+      pointer.y = -1e4;
     };
 
     // Resample on every size change and redraw at once: resizing the canvas

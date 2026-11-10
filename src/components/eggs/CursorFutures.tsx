@@ -86,6 +86,9 @@ export function FuturesOverlay({ onDone }: { onDone: () => void }) {
 
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop);
+      // After a hidden tab the scans resume from now; replaying every missed
+      // one would stall the first frame back.
+      if (now - lastScan > 1000) lastScan = now - SCAN_S * 1000;
       while (now - lastScan >= SCAN_S * 1000) {
         lastScan += SCAN_S * 1000;
         scan();

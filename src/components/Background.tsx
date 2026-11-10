@@ -29,6 +29,10 @@ const HOME_FRAME_MS = 1000 / 30;
 const PAGE_FRAME_MS = 1000 / 15;
 const QUALITY = [1, 0.8, 0.65];
 const SLOW_FRAME_MS = 40; // average frame interval that counts as struggling
+// A gap this long between frames is a hidden tab, a sleep or a stalled page,
+// not slow rendering, so the measurement restarts instead of counting it.
+const STALL_MS = 500;
+const SLOW_SAMPLES_TO_STEP = 2; // consecutive slow samples before quality drops
 const FEATURE_RESOLUTION = 0.5;
 const DRIFT_PERIOD_S = 30;
 
@@ -181,6 +185,8 @@ export function Background() {
     // Frame-interval sampling for the adaptive quality and the ?perf readout.
     let sampleStart = 0;
     let sampleFrames = 0;
+    let slowSamples = 0;
+    let poolTimer = 0;
 
     const applyTimeOfDay = () => {
       gl.useProgram(sky);
@@ -221,10 +227,15 @@ export function Background() {
       if (!start) start = now;
       const budget = document.body.dataset.view === "page" ? PAGE_FRAME_MS : HOME_FRAME_MS;
       if (now - lastDraw < budget - 2) return;
+      if (now - lastDraw > STALL_MS) {
+        sampleStart = 0;
+        sampleFrames = 0;
+      }
       lastDraw = now;
       render(now);
 
-      // Every two seconds: report, and step quality down if frames run slow.
+      // Every two seconds: report, and step quality down if frames have run
+      // slow for two samples in a row, so one hitch never costs resolution.
       sampleFrames += 1;
       if (!sampleStart) sampleStart = now;
       if (now - sampleStart >= 2000) {
@@ -232,8 +243,10 @@ export function Background() {
         if (perfRef.current) {
           perfRef.current.textContent = `${(1000 / interval).toFixed(0)} fps · ${interval.toFixed(1)} ms · ${canvas.width}×${canvas.height}`;
         }
-        if (interval > Math.max(SLOW_FRAME_MS, budget * 1.4) && quality < QUALITY.length - 1) {
+        slowSamples = interval > Math.max(SLOW_FRAME_MS, budget * 1.4) ? slowSamples + 1 : 0;
+        if (slowSamples >= SLOW_SAMPLES_TO_STEP && quality < QUALITY.length - 1) {
           quality += 1;
+          slowSamples = 0;
           resize();
         }
         sampleStart = now;
@@ -259,14 +272,15 @@ export function Background() {
     // opening it hands off to the column part-way through.
     const pool = (handOff: boolean) => {
       if (reducedMotion) return;
+      window.clearTimeout(poolTimer); // a new resolve replaces one in progress
       poolStep = 0;
       const advance = () => {
         if (disposed || poolStep >= POOL_BLOCKS.length - 1) return;
         poolStep += 1;
         if (handOff && poolStep === HAND_OFF_STEP) signal(SKY_RESOLVING);
-        window.setTimeout(advance, STEP_MS);
+        poolTimer = window.setTimeout(advance, STEP_MS);
       };
-      window.setTimeout(advance, STEP_MS);
+      poolTimer = window.setTimeout(advance, STEP_MS);
     };
 
     // Bakes the static landscape once: photo, contours and descent path in
@@ -365,6 +379,7 @@ export function Background() {
       disposed = true;
       cancelAnimationFrame(frame);
       cancelAnimationFrame(resizeFrame);
+      window.clearTimeout(poolTimer);
       stopSkip();
       window.clearInterval(clock);
       canvas.removeEventListener("webglcontextlost", onContextLost);
