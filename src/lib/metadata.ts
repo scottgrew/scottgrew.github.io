@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const siteUrl = "https://scott-grew.github.io";
+export const siteUrl = "https://scottgrew.github.io";
 
 export function buildTitle(pageTitle: string): string {
   return pageTitle === "Scott Grew" ? "Scott Grew" : `${pageTitle} — Scott Grew`;

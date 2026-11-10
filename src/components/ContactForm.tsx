@@ -52,7 +52,7 @@ export function ContactForm() {
         body: JSON.stringify({
           access_key: contact.accessKey,
           subject: `Website message from ${name.trim()}`,
-          from_name: "scott-grew.github.io",
+          from_name: "scottgrew.github.io",
           name: name.trim(),
           email: email.trim(),
           message: message.trim(),

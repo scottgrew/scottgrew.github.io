@@ -12,7 +12,7 @@ export type Project = {
   code: string;
 };
 
-const github = "https://github.com/Scott-Grew";
+const github = "https://github.com/scottgrew";
 
 export const home = {
   name: "Scott Grew",
