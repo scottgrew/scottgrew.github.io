@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ellipse, predict, start, update, type Estimate } from "./cursorFilter";
 import styles from "./eggs.module.css";
 
@@ -8,17 +8,19 @@ import styles from "./eggs.module.css";
 // filter tracks your cursor. It "scans" ten times a second, as the lidar
 // does; a scan with no cursor movement is a miss. As in the tracker, a track
 // is confirmed after 3 hits and dropped after 5 misses in a row, and it draws
-// its 2σ uncertainty ellipse and a 1.5 s forecast.
+// its 2σ uncertainty ellipse and a 0.6 s forecast. Any click puts it away;
+// hovering the radar again brings it back.
 
 const SCAN_S = 0.1;
 const HITS_TO_CONFIRM = 3;
 const MISSES_TO_DELETE = 5;
-const FORECAST_S = 1.5;
+const FORECAST_S = 0.6;
+const MISSES_TENTATIVE = 2; // a new track survives one quiet scan
 const IDLE_OFF_MS = 5000;
 
 type Track = { id: number; estimate: Estimate; hits: number; misses: number };
 
-function Overlay({ onIdle }: { onIdle: () => void }) {
+function Overlay({ onDone }: { onDone: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ function Overlay({ onIdle }: { onIdle: () => void }) {
     let lastScan = performance.now();
     let lastMove = performance.now();
     let frame = 0;
+    let heading = 0;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -57,7 +60,8 @@ function Overlay({ onIdle }: { onIdle: () => void }) {
         }
       } else if (track) {
         track.misses += 1;
-        if (track.misses >= MISSES_TO_DELETE || track.hits < HITS_TO_CONFIRM) track = null;
+        const limit = track.hits < HITS_TO_CONFIRM ? MISSES_TENTATIVE : MISSES_TO_DELETE;
+        if (track.misses >= limit) track = null;
       }
       moved = false;
     };
@@ -66,7 +70,10 @@ function Overlay({ onIdle }: { onIdle: () => void }) {
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
       if (!track) return;
       const shown = predict(track.estimate, (now - lastScan) / 1000);
-      const [x, y, yaw, v] = shown.mean;
+      const [x, y, vx, vy] = shown.mean;
+      const v = Math.hypot(vx, vy);
+      // The box turns with the motion, and holds its last heading when slow.
+      if (v > 40) heading = Math.atan2(vy, vx);
       const solid = track.hits >= HITS_TO_CONFIRM && track.misses === 0;
       context.strokeStyle = "#f29a4a";
       context.fillStyle = "#f29a4a";
@@ -91,7 +98,7 @@ function Overlay({ onIdle }: { onIdle: () => void }) {
       context.setLineDash(solid ? [] : [4, 3]);
       context.save();
       context.translate(x, y);
-      context.rotate(yaw);
+      context.rotate(heading);
       context.strokeRect(-11, -6, 22, 12);
       context.restore();
       context.font = "11px ui-monospace, monospace";
@@ -106,29 +113,32 @@ function Overlay({ onIdle }: { onIdle: () => void }) {
         scan();
       }
       draw(now);
-      if (!track && now - lastMove > IDLE_OFF_MS) onIdle();
+      if (!track && now - lastMove > IDLE_OFF_MS) onDone();
     };
     frame = requestAnimationFrame(loop);
     window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerdown", onDone);
     window.addEventListener("resize", resize);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onDone);
       window.removeEventListener("resize", resize);
     };
-  }, [onIdle]);
+  }, [onDone]);
 
   return <canvas ref={canvasRef} className={styles.trackerCanvas} aria-hidden="true" data-egg="tracker" />;
 }
 
 export function CursorTracker({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(false);
+  const stop = useCallback(() => setActive(false), []);
   return (
     <>
-      <button type="button" className={styles.trigger} aria-label="Track my cursor with Throughline's filter" onPointerEnter={() => setActive(true)} onClick={() => setActive(true)}>
+      <div className={styles.trigger} aria-hidden="true" data-egg-trigger="tracker" onPointerEnter={() => setActive(true)}>
         {children}
-      </button>
-      {active ? <Overlay onIdle={() => setActive(false)} /> : null}
+      </div>
+      {active ? <Overlay onDone={stop} /> : null}
     </>
   );
 }

@@ -1,5 +1,3 @@
-import { AnchorMap } from "./eggs/AnchorMap";
-import { ConvergenceCurve } from "./eggs/ConvergenceCurve";
 import { CursorTracker } from "./eggs/CursorTracker";
 import styles from "./ProjectMotif.module.css";
 
@@ -102,7 +100,7 @@ function GameTree() {
 
 export function ProjectMotif({ slug }: { slug: string }) {
   if (slug === "throughline") return <CursorTracker><LidarSweep /></CursorTracker>;
-  if (slug === "motionnet") return <AnchorMap><PathFan /></AnchorMap>;
-  if (slug === "showdown") return <ConvergenceCurve><GameTree /></ConvergenceCurve>;
+  if (slug === "motionnet") return <PathFan />;
+  if (slug === "showdown") return <GameTree />;
   return null;
 }

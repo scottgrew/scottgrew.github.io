@@ -213,20 +213,12 @@ test("the point-cloud name never shows an empty canvas while the window resizes"
 });
 
 
-test("the Showdown game tree reveals the real convergence curve", async ({ page }) => {
-  await page.goto("/showdown/");
-  await page.getByRole("button", { name: "Show how the solver converged" }).hover();
-  await expect(page.getByText("published 0.805")).toBeVisible();
-});
 
 test("the Throughline radar starts tracking the cursor", async ({ page }) => {
   await page.goto("/throughline/");
-  await page.getByRole("button", { name: /Track my cursor/ }).hover();
+  await page.locator("[data-egg-trigger=tracker]").hover();
   await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(1);
+  await page.mouse.click(40, 40);
+  await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(0);
 });
 
-test("the MotionNet paths reveal the 54 fitted destinations", async ({ page }) => {
-  await page.goto("/motionnet/");
-  await page.getByRole("button", { name: /54 destinations/ }).hover();
-  await expect(page.getByText("54 typical destinations for cars")).toBeVisible();
-});
