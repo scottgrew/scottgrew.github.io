@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans, Syne } from "next/font/google";
 import { Background } from "@/components/Background";
 import { SiteFrame } from "@/components/SiteFrame";
 import { home } from "@/content/site";
@@ -13,12 +13,13 @@ const plexSans = IBM_Plex_Sans({
   display: "swap",
 });
 
-// The display face for the name and page titles: Archivo's variable width
-// axis at its widest, in ExtraBold. Plex stays for everything else.
-const archivo = Archivo({
+// The display face for the name and page titles: Syne ExtraBold, heavy
+// enough to stay legible when the name is broken into a point cloud. Plex
+// stays for everything else. Scott picked it from a specimen, 2026-11-09.
+const syne = Syne({
+  weight: ["800"],
   subsets: ["latin"],
-  axes: ["wdth"],
-  variable: "--font-archivo",
+  variable: "--font-syne",
   display: "swap",
 });
 
@@ -50,7 +51,7 @@ export const viewport: Viewport = { themeColor: "#1b1f22" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} ${archivo.variable}`}>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} ${syne.variable}`}>
       <head>
         <meta httpEquiv="Content-Security-Policy" content={CONTENT_SECURITY_POLICY} />
         <meta name="referrer" content="strict-origin-when-cross-origin" />

@@ -34,6 +34,8 @@ uniform float u_showMask;    // debug: tint the moving regions red
 uniform vec4 u_ridge[6];      // RIDGE packed four to a vector (21 used)
 uniform vec4 u_paths[16];     // 2 descents × 16 steps, two points per vector, image space
 uniform float u_pathDrawn;    // segments drawn so far on the first descent (fractional)
+uniform vec3 u_grade;         // time-of-day colour grade for the visitor's local hour
+uniform float u_night;        // 0 by day, 1 at night: stars come out
 
 const float CONTOURS_PER_UNIT = 5.5;
 const float PATH_STAGGER = 4.0;
@@ -207,6 +209,14 @@ vec3 liveColor(vec2 uv) {
   // The sunset light breathes very slightly where the image is warm.
   float warm = smoothstep(0.08, 0.32, color.r - color.b);
   color *= 1.0 + warm * 0.05 * sin(t * 0.22 + fbm(uv * 2.0 + t * 0.015) * 6.2831);
+
+  // Time of day: the whole scene is graded for the visitor's local hour, and
+  // at night a few stars twinkle in the clear sky above the cloud bank.
+  color *= u_grade;
+  float clearSky = (1.0 - smoothstep(ridge - 0.035, ridge - 0.006, uv.y)) * (1.0 - smoothstep(0.22, 0.34, uv.y));
+  vec2 cell = floor(uv * u_imageSize / 3.0);
+  float star = step(0.9972, hash(cell)) * (0.55 + 0.45 * sin(t * 1.7 + hash(cell + 7.0) * 6.2831));
+  color += vec3(0.9, 0.93, 1.0) * star * clearSky * u_night * (1.0 - smoothstep(0.45, 0.8, fog));
 
   return mix(color, vec3(1.0, 0.15, 0.1), u_showMask * m * 0.6);
 }

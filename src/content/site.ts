@@ -72,7 +72,19 @@ export function getProject(slug: string): Project | undefined {
   return projects.find((p) => p.slug === slug);
 }
 
+export const cv = {
+  title: "CV",
+  pdf: "/cv/scott-grew-resume.pdf",
+  image: "/cv/resume.png",
+};
+
 export const navItems: SiteLink[] = [
   ...projects.map((p) => ({ label: p.title, href: `/${p.slug}/` })),
   { label: "About", href: "/about/" },
+  { label: "CV", href: "/cv/" },
 ];
+
+// The view-transition name a nav button shares with its page's title.
+export function titleTransition(href: string) {
+  return `title-${href.replaceAll("/", "")}`;
+}

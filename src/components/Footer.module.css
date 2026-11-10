@@ -1,0 +1,60 @@
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  font-size: var(--label-size);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.sign {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text);
+}
+
+.sign span {
+  color: var(--text-dim);
+}
+
+.links {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links a {
+  display: inline-block;
+  padding: 0.75rem 0;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color var(--fast) ease;
+}
+
+.links a:hover,
+.links a:focus-visible {
+  color: var(--accent);
+}
+
+.keys {
+  flex-basis: 100%;
+  margin: 0;
+  font-family: var(--font-mono-family);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+.keys kbd {
+  padding: 0 0.35em;
+  border: 1px solid var(--hairline);
+  font-family: inherit;
+}

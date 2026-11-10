@@ -40,8 +40,6 @@ function samplePoints(heading: HTMLElement, text: string, width: number, height:
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return [];
   context.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}`;
-  // Match the heading's expanded width where the canvas supports it.
-  if ("fontStretch" in context) context.fontStretch = "expanded";
   context.textBaseline = "middle";
   context.fillStyle = "#fff";
 
@@ -124,7 +122,7 @@ export function NameCloud({ text, className }: { text: string; className?: strin
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, width, height);
 
-      const size = Math.max(1.6, parseFloat(getComputedStyle(heading).fontSize) / 22);
+      const size = Math.max(1.8, parseFloat(getComputedStyle(heading).fontSize) / 20);
       for (const p of points) {
         if (p.tx <= beam) {
           const shimmer = reduced ? 0 : 0.35 * Math.sin(now / 520 + p.phase);

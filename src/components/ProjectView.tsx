@@ -10,7 +10,7 @@ export function ProjectView({ project }: { project: Project }) {
   const next = projects[index + 1];
 
   return (
-    <Page title={project.title} motif={<ProjectMotif slug={project.slug} />}>
+    <Page title={project.title} transitionName={`title-${project.slug}`} motif={<ProjectMotif slug={project.slug} />}>
       {project.demo ? (
         <figure className={styles.demo}>
           {/* A GIF in a static export: next/image would add nothing here. */}

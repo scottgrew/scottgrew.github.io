@@ -7,7 +7,7 @@ export const metadata = buildMetadata(about.title, about.body[0], "/about/");
 
 export default function AboutPage() {
   return (
-    <Page title={about.title}>
+    <Page title={about.title} transitionName="title-about">
       {about.body.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}

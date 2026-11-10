@@ -13,13 +13,13 @@
 
   --font-sans-family: var(--font-plex-sans), system-ui, sans-serif;
   --font-mono-family: var(--font-plex-mono), ui-monospace, monospace;
-  --font-display-family: var(--font-archivo), var(--font-plex-sans), sans-serif;
+  --font-display-family: var(--font-syne), var(--font-plex-sans), sans-serif;
 
   /* Type: body, the small spaced label, and the spaced display heading. */
   --body-size: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
   --label-size: 0.72rem;
   --label-track: 0.22em;
-  --display-track: 0.18em;
+  --display-track: 0.1em;
 
   /* Spacing steps. */
   --space-1: 0.5rem;
@@ -102,6 +102,34 @@ a:focus-visible {
     opacity: 0;
     filter: blur(6px);
     transform: translateY(1.2rem);
+  }
+}
+
+/* ---------- Print: black text on white, no scene ---------- */
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .bg-root,
+  canvas,
+  svg[aria-hidden="true"],
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  * {
+    color: #000 !important;
+    text-shadow: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
   }
 }
 

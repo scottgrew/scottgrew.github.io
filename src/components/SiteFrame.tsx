@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ViewTransition, useEffect, useRef, useState } from "react";
-import { home, navItems } from "@/content/site";
+import { home, navItems, titleTransition } from "@/content/site";
 import { Eggs } from "./Eggs";
+import { InfoLine } from "./InfoLine";
+import { Shortcuts } from "./Shortcuts";
 import { NameCloud } from "./NameCloud";
 import { SGMark } from "./SGMark";
 import { SkipConnection } from "./SkipConnection";
@@ -32,7 +34,12 @@ function Nav({ current, compact }: { current: string; compact: boolean }) {
               className={styles.navLink}
               aria-current={active ? "page" : undefined}
             >
-              <span className={styles.navLabel}>{item.label}</span>
+              <span
+                className={styles.navLabel}
+                style={active ? undefined : { viewTransitionName: titleTransition(item.href) }}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}
@@ -121,6 +128,8 @@ export function SiteFrame({ children }: { children: React.ReactNode }) {
     <>
       <div className={styles.shade} data-view={isHome ? "home" : "page"} aria-hidden="true" />
       <Eggs active={isHome} />
+      <Shortcuts />
+      {isHome ? <InfoLine /> : null}
       <header
         className={`${styles.frame} ${isHome ? styles.homeFrame : styles.barFrame} ${
           intro ? styles.intro : ""

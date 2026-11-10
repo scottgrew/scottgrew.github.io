@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const PAGES = ["/", "/throughline/", "/motionnet/", "/showdown/", "/about/"];
+const PAGES = ["/", "/throughline/", "/motionnet/", "/showdown/", "/about/", "/cv/"];
 const WIDTHS = [375, 768, 1280, 1920];
 const SHOTS = process.env.SHOT_DIR;
 
@@ -24,7 +24,7 @@ test("home shows the name, the nav, the skip connection and the live sky", async
   const errors = watchErrors(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Scott Grew" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(4);
+  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(5);
   await page.waitForTimeout(2200);
   expect(await opacity(page, "h1")).toBe("1");
   expect(await opacity(page, "nav[aria-label=Main]")).toBe("1");
@@ -136,4 +136,29 @@ test("unknown pages are out of distribution", async ({ page }) => {
   await page.goto("/404.html");
   await expect(page.getByText("Out of distribution.")).toBeVisible();
   await expect(page.getByText("this page")).toBeVisible();
+});
+
+test("keyboard shortcuts open pages, go home, and list themselves", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForTimeout(800);
+  await page.keyboard.press("2");
+  await expect(page.getByRole("heading", { level: 1, name: "MotionNet" })).toBeVisible();
+  await page.keyboard.press("?");
+  await expect(page.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { level: 1, name: "Scott Grew" })).toBeVisible();
+});
+
+test("the CV page offers the site resume, which carries no contact details", async ({ page, request }) => {
+  await page.goto("/cv/");
+  const download = page.getByRole("link", { name: /Download PDF/ });
+  await expect(download).toHaveAttribute("href", "/cv/scott-grew-resume.pdf");
+  const pdf = await request.get("/cv/scott-grew-resume.pdf");
+  expect(pdf.status()).toBe(200);
+  await expect(page.getByRole("img", { name: /resume/ })).toBeVisible();
+});
+
+test("project pages end with the footer", async ({ page }) => {
+  await page.goto("/showdown/");
+  await expect(page.locator("main footer")).toContainText("Updated");
 });

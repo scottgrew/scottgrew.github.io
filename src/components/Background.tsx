@@ -23,6 +23,38 @@ const MAX_DPR = 1.5;
 const FEATURE_RESOLUTION = 0.5;
 const DRIFT_PERIOD_S = 30;
 
+// The sky's colour grade through the day, by the visitor's local hour:
+// [hour, red, green, blue, night]. Cool at dawn, the photo as shot by day,
+// golden toward sunset, deep blue with stars at night; linear in between.
+const DAY = [
+  [0, 0.5, 0.58, 0.85, 1],
+  [5, 0.55, 0.62, 0.85, 0.9],
+  [6.5, 0.9, 0.93, 1.05, 0],
+  [9, 1, 1, 1, 0],
+  [16, 1, 1, 1, 0],
+  [18, 1.1, 1, 0.86, 0],
+  [19.5, 0.85, 0.78, 0.86, 0.25],
+  [21, 0.5, 0.58, 0.85, 1],
+  [24, 0.5, 0.58, 0.85, 1],
+];
+
+function skyAtHour(hour: number) {
+  const i = Math.max(0, DAY.findIndex((row) => row[0] > hour) - 1);
+  const [h0, ...a] = DAY[i];
+  const [h1, ...b] = DAY[i + 1];
+  const f = (hour - h0) / (h1 - h0);
+  const mix = a.map((value, k) => value + (b[k] - value) * f);
+  return { grade: [mix[0], mix[1], mix[2]] as const, night: mix[3] };
+}
+
+// The visitor's local hour; ?hour=21 previews any time of day.
+function visitorHour() {
+  const forced = Number(new URLSearchParams(window.location.search).get("hour"));
+  if (Number.isFinite(forced) && forced >= 0 && forced < 24 && window.location.search.includes("hour=")) return forced;
+  const now = new Date();
+  return now.getHours() + now.getMinutes() / 60;
+}
+
 // The gradient-descent path starts drawing once the sky is sharp.
 const PATH_DELAY_S = 1.8;
 const PATH_DRAW_S = 4;
@@ -101,9 +133,18 @@ export function Background() {
       ridge: at("u_ridge"),
       paths: at("u_paths"),
       pathDrawn: at("u_pathDrawn"),
+      grade: at("u_grade"),
+      night: at("u_night"),
     };
     gl.uniform4fv(u.ridge, packRidge(RIDGE));
     gl.uniform1f(u.showMask, window.location.hash === "#sky-mask" ? 1 : 0);
+    const applyTimeOfDay = () => {
+      const { grade, night } = skyAtHour(visitorHour());
+      gl.uniform3f(u.grade, grade[0], grade[1], grade[2]);
+      gl.uniform1f(u.night, night);
+    };
+    applyTimeOfDay();
+    const clock = window.setInterval(applyTimeOfDay, 60_000);
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let dpr = 1;
@@ -183,6 +224,7 @@ export function Background() {
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
+      window.clearInterval(clock);
       window.removeEventListener("resize", redraw);
       window.removeEventListener("keydown", onKey);
     };

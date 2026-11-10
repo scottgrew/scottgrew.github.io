@@ -18,24 +18,14 @@
   pointer-events: none;
 }
 
-.label {
-  margin: 0 0 var(--space-2);
-  font-family: var(--font-mono-family);
-  font-size: var(--label-size);
-  letter-spacing: var(--label-track);
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-
 .title {
   display: inline-block;
   margin: 0;
   padding: 0 0 var(--space-2);
   border-bottom: 1px solid var(--accent);
   font-family: var(--font-display-family);
-  font-size: clamp(2rem, 1.1rem + 3.4vw, 3.4rem);
+  font-size: clamp(2.2rem, 1.2rem + 3.6vw, 3.8rem);
   font-weight: 800;
-  font-stretch: 125%;
   letter-spacing: var(--display-track);
   line-height: 1.1;
   text-transform: uppercase;
@@ -65,7 +55,8 @@
   }
 
   .title {
-    letter-spacing: 0.1em;
+    font-size: 7vw;
+    letter-spacing: 0.05em;
   }
 
   .motif {
