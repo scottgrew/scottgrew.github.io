@@ -71,9 +71,6 @@ function HomeColumn({ current }: { current: string }) {
   return (
     <div ref={columnRef} className={styles.column}>
       <SkipConnection column={columnRef} upper={upperRef} lower={lowerRef} box={boxRef} />
-      <div className={`${styles.step} ${styles.s1}`}>
-        <Mark size={88} />
-      </div>
       <div ref={upperRef} className={`${styles.line} ${styles.step} ${styles.s2}`} />
       <div ref={boxRef} className={`${styles.box} ${styles.step} ${styles.s3}`}>
         <ViewTransition name="site-name">
