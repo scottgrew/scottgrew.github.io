@@ -14,6 +14,7 @@ const SCAN_S = 0.1;
 const HITS_TO_CONFIRM = 3;
 const MISSES_TO_DELETE = 5;
 const FORECAST_S = 0.6;
+const FOLLOW_S = 0.15; // the box lags a steady cursor by about speed × FOLLOW_S
 const MISSES_TENTATIVE = 2; // a new track survives one quiet scan
 const IDLE_OFF_MS = 5000;
 
@@ -36,6 +37,7 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
     let heading = 0;
     let turn = 0; // rad/s, smoothed over recent scans
     let scanHeading = 0;
+    let shown: { id: number; x: number; y: number; time: number } | null = null;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -77,10 +79,15 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
     const draw = (now: number) => {
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
       if (!track) return;
-      // Projected to this frame so it moves smoothly; it trails the cursor
-      // slightly because the filter smooths each reading.
-      const shown = predict(track.estimate, (now - lastScan) / 1000);
-      const [x, y, vx, vy] = shown.mean;
+      // The filter's estimate, projected to this frame, is the target. The
+      // drawn box eases toward it with time constant FOLLOW_S, so it follows
+      // behind a moving cursor and catches up when the cursor stops.
+      const target = predict(track.estimate, (now - lastScan) / 1000);
+      const [tx, ty, vx, vy] = target.mean;
+      if (!shown || shown.id !== track.id) shown = { id: track.id, x: tx, y: ty, time: now };
+      const ease = 1 - Math.exp(-(now - shown.time) / 1000 / FOLLOW_S);
+      shown = { id: track.id, x: shown.x + (tx - shown.x) * ease, y: shown.y + (ty - shown.y) * ease, time: now };
+      const { x, y } = shown;
       const v = Math.hypot(vx, vy);
       // The box turns with the motion, and holds its last heading when slow.
       if (v > 40) heading = Math.atan2(vy, vx);
@@ -88,7 +95,7 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
       context.strokeStyle = "#f29a4a";
       context.fillStyle = "#f29a4a";
       context.lineWidth = 1;
-      const { rx, ry, angle } = ellipse(shown);
+      const { rx, ry, angle } = ellipse(target);
       context.globalAlpha = 0.6;
       context.setLineDash(solid ? [] : [4, 3]);
       context.beginPath();
