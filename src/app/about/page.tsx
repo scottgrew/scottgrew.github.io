@@ -1,32 +1,25 @@
-import { InnerPanel } from "@/components/InnerPanel";
-import { LinkButton } from "@/components/LinkButton";
-import { about } from "@/content/site";
+import { Page } from "@/components/Page";
+import { about, home } from "@/content/site";
 import { buildMetadata } from "@/lib/metadata";
 import styles from "./about.module.css";
 
-export const metadata = buildMetadata(
-  about.title,
-  about.paragraphs[0],
-  "/about/",
-);
+export const metadata = buildMetadata(about.title, about.body[0], "/about/");
 
 export default function AboutPage() {
   return (
-    <InnerPanel
-      title={about.title}
-      links={about.links.map((link) => (
-        <LinkButton key={link.href} href={link.href} external>
-          {link.label}
-        </LinkButton>
+    <Page title={about.title}>
+      {about.body.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
       ))}
-    >
-      <div className={styles.content}>
-        {about.paragraphs.map((p) => (
-          <p key={p.slice(0, 32)} className={styles.paragraph}>
-            {p}
-          </p>
+      <ul className={styles.links}>
+        {home.links.map((link) => (
+          <li key={link.href}>
+            <a href={link.href} rel="noopener noreferrer" target="_blank">
+              {link.label} ↗
+            </a>
+          </li>
         ))}
-      </div>
-    </InnerPanel>
+      </ul>
+    </Page>
   );
 }

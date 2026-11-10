@@ -1,289 +1,195 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FRAGMENT_SHADER, RIDGE, VERTEX_SHADER } from "./skyShader";
 import styles from "./Background.module.css";
 
+const IMAGE_SRC = "/media/background.jpg";
+
 const KONAMI = [
-  "ArrowUp",
-  "ArrowUp",
-  "ArrowDown",
-  "ArrowDown",
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowLeft",
-  "ArrowRight",
-  "b",
-  "a",
+  "arrowup", "arrowup", "arrowdown", "arrowdown",
+  "arrowleft", "arrowright", "arrowleft", "arrowright", "b", "a",
 ];
 
-const POOL_STEPS = [1 / 32, 1 / 16, 1 / 8, 1 / 4, 1 / 2, 1];
-const STEP_MS = 90;
+// Pooled load: block sizes in CSS pixels, each held for STEP_MS, from coarse
+// "max-pooled" squares down to the sharp image.
+const POOL_BLOCKS = [48, 32, 16, 8, 4, 2, 1];
+const STEP_MS = 140;
 
-function drawCover(
-  ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  w: number,
-  h: number,
-) {
-  const iw = image.naturalWidth;
-  const ih = image.naturalHeight;
-  const scale = Math.max(w / iw, h / ih);
-  const sw = iw * scale;
-  const sh = ih * scale;
-  const dx = (w - sw) / 2;
-  const dy = (h - sh) / 2;
-  ctx.drawImage(image, dx, dy, sw, sh);
+// Device-pixel cap keeps the shader cheap on large high-DPI screens; the
+// feature map samples the scene nine times per pixel, so it runs at half that.
+const MAX_DPR = 1.5;
+const FEATURE_RESOLUTION = 0.5;
+const DRIFT_PERIOD_S = 30;
+
+function compile(gl: WebGLRenderingContext, type: number, source: string) {
+  const shader = gl.createShader(type);
+  if (!shader) throw new Error("createShader failed");
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    throw new Error(gl.getShaderInfoLog(shader) ?? "shader compile failed");
+  }
+  return shader;
 }
 
-function greyscale(data: Uint8ClampedArray): Float32Array {
-  const out = new Float32Array(data.length / 4);
-  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-    out[j] =
-      data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+function createProgram(gl: WebGLRenderingContext) {
+  const program = gl.createProgram();
+  if (!program) throw new Error("createProgram failed");
+  gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER));
+  gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(gl.getProgramInfoLog(program) ?? "program link failed");
   }
-  return out;
-}
-
-function sobelMagnitude(gray: Float32Array, width: number, height: number) {
-  const out = new Float32Array(gray.length);
-  let max = 0;
-  const gxK = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
-  const gyK = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
-
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      let gx = 0;
-      let gy = 0;
-      let k = 0;
-      for (let ky = -1; ky <= 1; ky++) {
-        for (let kx = -1; kx <= 1; kx++) {
-          const v = gray[(y + ky) * width + (x + kx)];
-          gx += v * gxK[k];
-          gy += v * gyK[k];
-          k++;
-        }
-      }
-      const mag = Math.sqrt(gx * gx + gy * gy);
-      const idx = y * width + x;
-      out[idx] = mag;
-      if (mag > max) max = mag;
-    }
-  }
-
-  const scale = max > 0 ? 255 / max : 0;
-  for (let i = 0; i < out.length; i++) {
-    out[i] = out[i] * scale;
-  }
-  return out;
+  return program;
 }
 
 export function Background() {
+  const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageRef = useRef<HTMLImageElement | null>(null);
-  const featureMapRef = useRef<ImageData | null>(null);
-  const konamiIdx = useRef(0);
-  const [featureMap, setFeatureMap] = useState(false);
-  const [loadDone, setLoadDone] = useState(false);
-  const reducedMotion = useRef(false);
-
-  const renderFrame = useCallback((useFeature: boolean) => {
-    const canvas = canvasRef.current;
-    const img = imageRef.current;
-    if (!canvas || !img) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-
-    if (useFeature && featureMapRef.current) {
-      ctx.putImageData(featureMapRef.current, 0, 0);
-      return;
-    }
-
-    ctx.imageSmoothingEnabled = true;
-    drawCover(ctx, img, w, h);
-  }, []);
-
-  const pooledLoad = useCallback(() => {
-    const canvas = canvasRef.current;
-    const img = imageRef.current;
-    if (!canvas || !img) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-
-    if (reducedMotion.current) {
-      ctx.imageSmoothingEnabled = true;
-      drawCover(ctx, img, w, h);
-      setLoadDone(true);
-      window.dispatchEvent(new Event("background-ready"));
-      return;
-    }
-
-    let step = 0;
-    const run = () => {
-      const frac = POOL_STEPS[step];
-      const sw = Math.max(1, Math.floor(w * frac));
-      const sh = Math.max(1, Math.floor(h * frac));
-
-      const off = document.createElement("canvas");
-      off.width = sw;
-      off.height = sh;
-      const octx = off.getContext("2d");
-      if (!octx) return;
-      octx.imageSmoothingEnabled = true;
-      drawCover(octx, img, sw, sh);
-
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(off, 0, 0, sw, sh, 0, 0, w, h);
-
-      step++;
-      if (step < POOL_STEPS.length) {
-        window.setTimeout(run, STEP_MS);
-      } else {
-        ctx.imageSmoothingEnabled = true;
-        drawCover(ctx, img, w, h);
-        setLoadDone(true);
-        window.dispatchEvent(new Event("background-ready"));
-      }
-    };
-    run();
-  }, []);
-
-  const buildFeatureMap = useCallback(() => {
-    const img = imageRef.current;
-    if (!img) return;
-
-    const long = Math.max(window.innerWidth, window.innerHeight);
-    const scale = long > 1600 ? 1600 / long : 1;
-    const w = Math.floor(window.innerWidth * scale);
-    const h = Math.floor(window.innerHeight * scale);
-
-    const off = document.createElement("canvas");
-    off.width = w;
-    off.height = h;
-    const octx = off.getContext("2d");
-    if (!octx) return;
-    drawCover(octx, img, w, h);
-    const id = octx.getImageData(0, 0, w, h);
-    const gray = greyscale(id.data);
-    const mag = sobelMagnitude(gray, w, h);
-
-    const out = octx.createImageData(w, h);
-    for (let i = 0; i < mag.length; i++) {
-      const v = Math.round(mag[i]);
-      const j = i * 4;
-      out.data[j] = v;
-      out.data[j + 1] = v;
-      out.data[j + 2] = v;
-      out.data[j + 3] = 255;
-    }
-
-    const main = canvasRef.current;
-    if (!main) return;
-    const mainW = main.width;
-    const mainH = main.height;
-    const scaled = document.createElement("canvas");
-    scaled.width = mainW;
-    scaled.height = mainH;
-    const sctx = scaled.getContext("2d");
-    if (!sctx) return;
-    sctx.imageSmoothingEnabled = true;
-    const temp = document.createElement("canvas");
-    temp.width = w;
-    temp.height = h;
-    temp.getContext("2d")?.putImageData(out, 0, 0);
-    sctx.drawImage(temp, 0, 0, w, h, 0, 0, mainW, mainH);
-    featureMapRef.current = sctx.getImageData(0, 0, mainW, mainH);
-  }, []);
-
-  const resize = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
-    featureMapRef.current = null;
-    if (featureMap) {
-      buildFeatureMap();
-      renderFrame(true);
-    } else if (loadDone) {
-      renderFrame(false);
-    } else {
-      pooledLoad();
-    }
-  }, [buildFeatureMap, featureMap, loadDone, pooledLoad, renderFrame]);
+  const [feature, setFeature] = useState(false);
+  const featureRef = useRef(false);
 
   useEffect(() => {
-    reducedMotion.current = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const wrap = wrapRef.current;
+    const canvas = canvasRef.current;
+    if (!wrap || !canvas) return;
+    // Which renderer is live is recorded on the element itself; the CSS shows
+    // the still photo for "still" and fades the canvas in for "webgl".
+    const setRenderer = (renderer: "webgl" | "still") => {
+      wrap.dataset.renderer = renderer;
+    };
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: false });
+    if (!gl) {
+      setRenderer("still");
+      return;
+    }
 
-    const img = new Image();
-    img.src = "/media/background.jpg";
-    img.onload = () => {
-      imageRef.current = img;
+    let program: WebGLProgram;
+    try {
+      program = createProgram(gl);
+    } catch (error) {
+      console.warn("Live sky unavailable, showing the still photo.", error);
+      setRenderer("still");
+      return;
+    }
+    gl.useProgram(program);
+
+    // One triangle that covers the whole screen.
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const position = gl.getAttribLocation(program, "a_position");
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+    const at = (name: string) => gl.getUniformLocation(program, name);
+    const u = {
+      resolution: at("u_resolution"),
+      imageSize: at("u_imageSize"),
+      time: at("u_time"),
+      pixel: at("u_pixel"),
+      feature: at("u_feature"),
+      zoom: at("u_zoom"),
+      showMask: at("u_showMask"),
+      ridge: at("u_ridge"),
+    };
+    gl.uniform1fv(u.ridge, new Float32Array(RIDGE));
+    gl.uniform1f(u.showMask, window.location.hash === "#sky-mask" ? 1 : 0);
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let dpr = 1;
+    let frame = 0;
+    let disposed = false;
+    let start = 0;
+    let poolStep = reducedMotion ? POOL_BLOCKS.length - 1 : 0;
+
+    const resize = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR) *
+        (featureRef.current ? FEATURE_RESOLUTION : 1);
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform2f(u.resolution, canvas.width, canvas.height);
+    };
+
+    const draw = (now: number) => {
+      if (disposed) return;
+      if (!start) start = now;
+      const seconds = reducedMotion ? 0 : (now - start) / 1000;
+      const drift = reducedMotion ? 0 : 0.5 - 0.5 * Math.cos((2 * Math.PI * seconds) / DRIFT_PERIOD_S);
+      gl.uniform1f(u.time, seconds);
+      gl.uniform1f(u.zoom, 1 + 0.01 * drift);
+      gl.uniform1f(u.pixel, POOL_BLOCKS[poolStep] * dpr);
+      gl.uniform1f(u.feature, featureRef.current ? 1 : 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      if (!reducedMotion) frame = requestAnimationFrame(draw);
+    };
+    const redraw = () => {
       resize();
+      if (reducedMotion) draw(performance.now());
     };
 
-    const onResize = () => resize();
-    window.addEventListener("resize", onResize);
+    const image = new Image();
+    image.onload = () => {
+      if (disposed) return;
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.uniform2f(u.imageSize, image.naturalWidth, image.naturalHeight);
+      resize();
+      setRenderer("webgl");
+      frame = requestAnimationFrame(draw);
+      const advance = () => {
+        if (disposed || poolStep >= POOL_BLOCKS.length - 1) return;
+        poolStep += 1;
+        window.setTimeout(advance, STEP_MS);
+      };
+      window.setTimeout(advance, STEP_MS);
+    };
+    image.onerror = () => setRenderer("still");
+    image.src = IMAGE_SRC;
 
-    return () => window.removeEventListener("resize", onResize);
-  }, [resize]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const expected = KONAMI[konamiIdx.current];
-      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-      if (key === expected) {
-        konamiIdx.current++;
-        if (konamiIdx.current === KONAMI.length) {
-          konamiIdx.current = 0;
-          setFeatureMap((prev) => {
-            const next = !prev;
-            if (next) {
-              buildFeatureMap();
-              requestAnimationFrame(() => renderFrame(true));
-            } else {
-              renderFrame(false);
-            }
-            window.dispatchEvent(
-              new CustomEvent("feature-map-change", { detail: next }),
-            );
-            return next;
-          });
-        }
-      } else {
-        konamiIdx.current = key === KONAMI[0] ? 1 : 0;
-      }
+    // Konami code toggles the feature map. A wrong key restarts the sequence,
+    // or counts as its first step when it is itself the first key.
+    let progress = 0;
+    const onKey = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      progress = key === KONAMI[progress] ? progress + 1 : key === KONAMI[0] ? 1 : 0;
+      if (progress < KONAMI.length) return;
+      progress = 0;
+      featureRef.current = !featureRef.current;
+      setFeature(featureRef.current);
+      redraw();
     };
 
+    window.addEventListener("resize", redraw);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [buildFeatureMap, renderFrame]);
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", redraw);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
 
   return (
     <div
-      className={`${styles.wrap} ${loadDone && !featureMap ? styles.drift : ""} ${
-        featureMap ? styles.paused : ""
-      }`}
-      data-load-done={loadDone ? "true" : "false"}
+      ref={wrapRef}
+      className={`bg-root ${styles.wrap}`}
+      data-renderer="pending"
+      data-feature={feature ? "on" : "off"}
+      aria-hidden="true"
     >
-      <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
-      <div className={styles.overlay} aria-hidden="true" />
-      <div className={styles.vignette} aria-hidden="true" />
-      {featureMap ? (
-        <p className={`${styles.featureLabel} mono`} aria-live="polite">
-          conv1 · sobel 3×3 · 2 kernels
-        </p>
+      <canvas ref={canvasRef} className={styles.canvas} />
+      <div className={styles.vignette} />
+      {feature ? (
+        <p className={styles.featureLabel}>conv1 · sobel 3×3 · 2 kernels</p>
       ) : null}
     </div>
   );

@@ -1,38 +1,34 @@
-"use client";
-
 import Link from "next/link";
-import { InnerPanel } from "@/components/InnerPanel";
+import { Page } from "@/components/Page";
 import styles from "./not-found.module.css";
 
-const bars = [
-  { label: "/throughline", value: 0.412 },
-  { label: "/motionnet", value: 0.331 },
-  { label: "/showdown", value: 0.254 },
-  { label: "this page", value: 0.003 },
+// The classifier's verdict on an unknown URL: a softmax over the pages that
+// exist, which leaves almost nothing for this one. The four values sum to 1.
+const DISTRIBUTION = [
+  { label: "/throughline", p: 0.412 },
+  { label: "/motionnet", p: 0.331 },
+  { label: "/showdown", p: 0.254 },
+  { label: "this page", p: 0.003 },
 ];
 
 export default function NotFound() {
   return (
-    <InnerPanel title="404">
-      <p>Out of distribution.</p>
-      <p className={styles.chartTitle}>p(page | url)</p>
-      <div className={styles.chart} role="img" aria-label="URL distribution chart">
-        {bars.map((bar) => (
-          <div key={bar.label} className={styles.row}>
-            <span className={styles.label}>{bar.label}</span>
-            <div className={styles.track}>
-              <div
-                className={styles.bar}
-                style={{ width: `${bar.value * 100}%` }}
-              />
-            </div>
-            <span className={`${styles.value} mono`}>{bar.value.toFixed(3)}</span>
+    <Page title="404" lede="Out of distribution.">
+      <figure className={styles.chart}>
+        <figcaption>p(page | url)</figcaption>
+        {DISTRIBUTION.map((row) => (
+          <div key={row.label} className={styles.row}>
+            <span className={styles.label}>{row.label}</span>
+            <span className={styles.track}>
+              <span className={styles.bar} style={{ width: `${row.p * 100}%` }} />
+            </span>
+            <span className={styles.value}>{row.p.toFixed(3)}</span>
           </div>
         ))}
-      </div>
-      <Link href="/" className={styles.homeLink}>
+      </figure>
+      <Link href="/" className={styles.home}>
         Back to home
       </Link>
-    </InnerPanel>
+    </Page>
   );
 }

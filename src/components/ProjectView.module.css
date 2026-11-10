@@ -1,0 +1,80 @@
+.demo {
+  margin: 0 0 var(--space-4);
+}
+
+.demo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--hairline);
+}
+
+.demo figcaption {
+  margin-top: var(--space-1);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.code {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.85rem;
+  margin-top: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--rule);
+  color: var(--text);
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  transition: border-color var(--fast) ease, color var(--fast) ease;
+}
+
+.code:hover,
+.code:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pager {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+}
+
+.pagerLink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.pagerNext {
+  margin-left: auto;
+  text-align: right;
+}
+
+.pagerHint {
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color var(--fast) ease;
+}
+
+.pagerTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.pagerLink:hover .pagerHint,
+.pagerLink:focus-visible .pagerHint {
+  color: var(--accent);
+}

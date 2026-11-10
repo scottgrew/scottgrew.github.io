@@ -1,109 +1,60 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./SkipConnection.module.css";
 
-type Metrics = {
-  width: number;
-  height: number;
-  upperMidY: number;
-  lowerMidY: number;
-  boxTop: number;
-  boxBottom: number;
-  boxRight: number;
-  columnCenterX: number;
-};
+type Geometry = { width: number; height: number; x: number; top: number; bottom: number; right: number };
 
-type SkipConnectionProps = {
-  upperLineRef: React.RefObject<HTMLDivElement | null>;
-  lowerLineRef: React.RefObject<HTMLDivElement | null>;
-  contentRef: React.RefObject<HTMLDivElement | null>;
-  columnRef: React.RefObject<HTMLDivElement | null>;
-};
-
+// Easter egg: a residual "skip connection" drawn around the name box. It
+// leaves the upper connector line, runs past the box's right edge, and adds
+// back into the lower connector line at the ⊕, the way a ResNet block adds
+// its input to its output.
 export function SkipConnection({
-  upperLineRef,
-  lowerLineRef,
-  contentRef,
-  columnRef,
-}: SkipConnectionProps) {
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
+  column,
+  upper,
+  lower,
+  box,
+}: {
+  column: React.RefObject<HTMLDivElement | null>;
+  upper: React.RefObject<HTMLDivElement | null>;
+  lower: React.RefObject<HTMLDivElement | null>;
+  box: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [geometry, setGeometry] = useState<Geometry | null>(null);
 
   useEffect(() => {
+    // Offsets come from layout, so the entrance animation (which scales the
+    // connector lines from zero) cannot skew the measurement.
     const measure = () => {
-      const upper = upperLineRef.current;
-      const lower = lowerLineRef.current;
-      const box = contentRef.current;
-      const column = columnRef.current;
-      if (!upper || !lower || !box || !column) return;
-
-      const colRect = column.getBoundingClientRect();
-      const upperRect = upper.getBoundingClientRect();
-      const lowerRect = lower.getBoundingClientRect();
-      const boxRect = box.getBoundingClientRect();
-
-      const extend = 24;
-      setMetrics({
-        width: column.clientWidth,
-        height: column.clientHeight,
-        upperMidY: upperRect.top + upperRect.height / 2 - colRect.top,
-        lowerMidY: lowerRect.top + lowerRect.height / 2 - colRect.top,
-        boxTop: boxRect.top - colRect.top,
-        boxBottom: boxRect.bottom - colRect.top,
-        boxRight: boxRect.right - colRect.left + extend,
-        columnCenterX: upperRect.left + upperRect.width / 2 - colRect.left,
+      const c = column.current;
+      const u = upper.current;
+      const l = lower.current;
+      const b = box.current;
+      if (!c || !u || !l || !b) return;
+      setGeometry({
+        width: c.offsetWidth,
+        height: c.offsetHeight,
+        x: u.offsetLeft + u.offsetWidth / 2,
+        top: u.offsetTop + u.offsetHeight / 2,
+        bottom: l.offsetTop + l.offsetHeight / 2,
+        right: b.offsetLeft + b.offsetWidth + 24,
       });
     };
-
     measure();
-    const ro = new ResizeObserver(measure);
-    if (columnRef.current) ro.observe(columnRef.current);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [columnRef, contentRef, lowerLineRef, upperLineRef]);
+    const observer = new ResizeObserver(measure);
+    if (column.current) observer.observe(column.current);
+    return () => observer.disconnect();
+  }, [column, upper, lower, box]);
 
-  if (!metrics) return null;
-
-  const { width, height, upperMidY, lowerMidY, boxTop, boxBottom, boxRight, columnCenterX } =
-    metrics;
-
-  const path = `M ${columnCenterX} ${upperMidY} H ${boxRight} V ${boxBottom} H ${columnCenterX} V ${lowerMidY}`;
+  if (!geometry) return null;
+  const { width, height, x, top, bottom, right } = geometry;
+  const join = 7;
 
   return (
-    <svg
-      ref={svgRef}
-      className={styles.skip}
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      aria-hidden="true"
-    >
-      <path d={path} className={styles.path} />
-      <circle
-        cx={columnCenterX}
-        cy={lowerMidY}
-        r="7.2"
-        className={styles.join}
-      />
-      <line
-        x1={columnCenterX - 4}
-        y1={lowerMidY}
-        x2={columnCenterX + 4}
-        y2={lowerMidY}
-        className={styles.plusStroke}
-      />
-      <line
-        x1={columnCenterX}
-        y1={lowerMidY - 4}
-        x2={columnCenterX}
-        y2={lowerMidY + 4}
-        className={styles.plusStroke}
-      />
-      <rect x={columnCenterX} y={boxTop} width={0} height={boxBottom - boxTop} fill="none" />
+    <svg className={styles.skip} width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+      <path className={styles.path} d={`M ${x} ${top} H ${right} V ${bottom} H ${x + join}`} />
+      <circle className={styles.join} cx={x} cy={bottom} r={join} />
+      <path className={styles.join} d={`M ${x - 4} ${bottom} H ${x + 4} M ${x} ${bottom - 4} V ${bottom + 4}`} />
     </svg>
   );
 }

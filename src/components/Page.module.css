@@ -1,0 +1,55 @@
+.page {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: clamp(8.5rem, 7rem + 5vw, 11rem) clamp(1.25rem, 5vw, 2rem) var(--space-6);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+
+.label {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono-family);
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.title {
+  display: inline-block;
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  border-bottom: 1px solid var(--accent);
+  font-size: clamp(2rem, 1.1rem + 3.4vw, 3.4rem);
+  font-weight: 600;
+  letter-spacing: var(--display-track);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.lede {
+  margin: var(--space-3) 0 0;
+  font-size: clamp(1.2rem, 1rem + 0.8vw, 1.5rem);
+  color: var(--text);
+}
+
+.body {
+  margin-top: var(--space-4);
+}
+
+.body p {
+  margin: 0 0 var(--space-3);
+  font-size: var(--body-size);
+  line-height: 1.75;
+  color: var(--text-body);
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding-top: 13rem;
+  }
+
+  .title {
+    letter-spacing: 0.2em;
+  }
+}

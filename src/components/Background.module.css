@@ -1,65 +1,49 @@
+/* The scene behind every page. The canvas draws the live sky; when WebGL
+   is missing the wrapper shows the still photo instead. */
+
 .wrap {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  background: var(--bg) center / cover no-repeat;
+}
+
+.wrap[data-renderer="still"] {
+  background-image: url("/media/background.jpg");
 }
 
 .canvas {
   display: block;
   width: 100%;
   height: 100%;
-  transform: scale(1);
+  opacity: 0;
+  transition: opacity 300ms ease;
 }
 
-.drift .canvas {
-  animation: bgDrift 30s ease-in-out infinite;
+.wrap[data-renderer="webgl"] .canvas {
+  opacity: 1;
 }
 
-.paused .canvas {
-  animation-play-state: paused;
-}
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(19, 21, 25, 0.5);
-  pointer-events: none;
+.wrap[data-renderer="still"] .canvas {
+  display: none;
 }
 
 .vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 40%,
-    rgba(0, 0, 0, 0.45) 100%
-  );
   pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.5) 100%);
 }
 
 .featureLabel {
   position: fixed;
   left: 1rem;
   bottom: 1rem;
+  z-index: 5;
   margin: 0;
-  z-index: 2;
-  color: var(--text-secondary);
+  font-family: var(--font-mono-family);
   font-size: 0.7rem;
-}
-
-@keyframes bgDrift {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.01);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .drift .canvas {
-    animation: none;
-  }
+  letter-spacing: 0.05em;
+  color: var(--accent);
 }

@@ -81,7 +81,7 @@ export default async function OpengraphImage() {
               fontSize: 22,
             }}
           >
-            MS Computer Science · USC
+            Computer science at USC
           </p>
         </div>
       </div>

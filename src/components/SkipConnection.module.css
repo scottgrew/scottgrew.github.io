@@ -1,27 +1,22 @@
 .skip {
   position: absolute;
   inset: 0;
-  pointer-events: none;
+  z-index: -1;
   overflow: visible;
+  pointer-events: none;
 }
 
 .path {
-  stroke: #ffffff;
-  stroke-opacity: 0.22;
+  fill: none;
+  stroke: var(--rule);
+  stroke-opacity: 0.4;
   stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }
 
 .join {
+  fill: none;
   stroke: var(--accent);
   stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.plusStroke {
-  stroke: var(--accent);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
 }
 
 @media (max-width: 736px) {

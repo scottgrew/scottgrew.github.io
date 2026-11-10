@@ -1,13 +1,39 @@
+/* Design system. Every page and component draws from these tokens; nothing
+   is styled with a one-off value. */
 
 :root {
   --bg: #1b1f22;
   --text: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-body: rgba(255, 255, 255, 0.9);
+  --text-dim: rgba(255, 255, 255, 0.66);
   --rule: #ffffff;
-  --hover-fill: rgba(255, 255, 255, 0.075);
+  --hairline: rgba(255, 255, 255, 0.24);
   --accent: #f29a4a;
-  --font-sans-family: var(--font-plex-sans), sans-serif;
-  --font-mono-family: var(--font-plex-mono), monospace;
+  --ink: rgba(12, 14, 18, 1);
+
+  --font-sans-family: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono-family: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Type: body, the small spaced label, and the spaced display heading. */
+  --body-size: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
+  --label-size: 0.72rem;
+  --label-track: 0.22em;
+  --display-track: 0.32em;
+
+  /* Spacing steps. */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: 4rem;
+  --space-6: 6rem;
+
+  /* Motion: one curve; hover is quick, scene changes are slow. */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 200ms;
+  --slow: 650ms;
+
+  color-scheme: dark;
 }
 
 *,
@@ -17,47 +43,71 @@
 }
 
 html {
-  overflow-x: hidden;
-  scroll-behavior: smooth;
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
+  min-height: 100vh;
   color: var(--text);
   font-family: var(--font-sans-family);
   font-weight: 300;
-  min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-a:focus-visible,
-button:focus-visible {
+a:focus-visible {
   outline: 1px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
-.mono {
-  font-family: var(--font-mono-family);
-  font-variant-numeric: tabular-nums;
+::selection {
+  background: rgba(242, 154, 74, 0.35);
 }
 
-.sgMarkText {
-  font-family: var(--font-sans-family);
-  font-weight: 600;
-  font-size: 1.35rem;
-  letter-spacing: 0.15em;
-  fill: currentColor;
+/* ---------- Page transitions (View Transitions API) ----------
+   The mark, the name and the nav carry shared names, so they glide between
+   the home column and the top bar. Page content blurs out and rises in. */
+
+::view-transition-group(*) {
+  animation-duration: var(--slow);
+  animation-timing-function: var(--ease);
 }
 
-.homeMark {
-  width: 5.5rem;
-  height: 5.5rem;
-  color: var(--text);
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(page-content) {
+  animation: vt-out 260ms ease-in both;
+}
+
+::view-transition-new(page-content) {
+  animation: vt-in 560ms 140ms var(--ease) both;
+}
+
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(-0.6rem);
+  }
+}
+
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(1.2rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
