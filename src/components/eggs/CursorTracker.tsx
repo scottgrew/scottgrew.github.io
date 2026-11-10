@@ -65,7 +65,7 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
       moved = false;
     };
 
-    const draw = (now: number) => {
+    const draw = () => {
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
       if (!track) return;
       // Drawn as of the last scan, not projected to this frame, so the box
@@ -113,7 +113,7 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
         lastScan += SCAN_S * 1000;
         scan();
       }
-      draw(now);
+      draw();
       if (!track && now - lastMove > IDLE_OFF_MS) onDone();
     };
     frame = requestAnimationFrame(loop);
