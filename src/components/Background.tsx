@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { descendMountain, PATH_SEGMENTS, PATH_STAGGER, packRidge } from "./terrain";
+import { introSeen, onSkip } from "./intro";
 import { FRAGMENT_SHADER, RIDGE, VERTEX_SHADER } from "./skyShader";
+import { descendMountain, PATH_SEGMENTS, packRidge } from "./terrain";
 import styles from "./Background.module.css";
 
 const IMAGE_SRC = "/media/background.jpg";
@@ -12,10 +13,18 @@ const KONAMI = [
   "arrowleft", "arrowright", "arrowleft", "arrowright", "b", "a",
 ];
 
-// Pooled load: block sizes in CSS pixels, each held for STEP_MS, from coarse
-// "max-pooled" squares down to the sharp image.
+// Opening, in ms from the first frame: the scene brightens from DIM to full,
+// then the contours fade in and the descent draws, quietly, behind the page.
+const DIM = 0.55;
+const BRIGHTEN_MS = 700;
+const AMBIENT_START_MS = 1200;
+const CONTOUR_FADE_MS = 3500;
+const PATH_DRAW_MS = 3800;
+
+// The blocky "pooled" load, kept as part of the Konami egg: the feature map
+// resolves from coarse squares. Block sizes in CSS pixels, STEP_MS each.
 const POOL_BLOCKS = [64, 48, 32, 16, 8, 4, 2, 1];
-const STEP_MS = 160;
+const STEP_MS = 110;
 
 // Device-pixel cap keeps the shader cheap on large high-DPI screens; the
 // feature map samples the scene nine times per pixel, so it runs at half that.
@@ -49,15 +58,15 @@ function skyAtHour(hour: number) {
 
 // The visitor's local hour; ?hour=21 previews any time of day.
 function visitorHour() {
-  const forced = Number(new URLSearchParams(window.location.search).get("hour"));
-  if (Number.isFinite(forced) && forced >= 0 && forced < 24 && window.location.search.includes("hour=")) return forced;
+  const params = new URLSearchParams(window.location.search);
+  const forced = Number(params.get("hour"));
+  if (params.has("hour") && Number.isFinite(forced) && forced >= 0 && forced < 24) return forced;
   const now = new Date();
   return now.getHours() + now.getMinutes() / 60;
 }
 
-// The gradient-descent path starts drawing once the sky is sharp.
-const PATH_DELAY_S = 1.8;
-const PATH_DRAW_S = 4;
+const easeOut = (x: number) => 1 - (1 - x) * (1 - x) * (1 - x);
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
@@ -133,6 +142,8 @@ export function Background() {
       ridge: at("u_ridge"),
       paths: at("u_paths"),
       pathDrawn: at("u_pathDrawn"),
+      topo: at("u_topo"),
+      bright: at("u_bright"),
       grade: at("u_grade"),
       night: at("u_night"),
     };
@@ -147,11 +158,16 @@ export function Background() {
     const clock = window.setInterval(applyTimeOfDay, 60_000);
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Reduced motion, a later load in the same visit, or any input: finished.
+    let finished = reducedMotion || introSeen();
+    const stopSkip = onSkip(() => {
+      finished = true;
+    });
     let dpr = 1;
     let frame = 0;
     let disposed = false;
     let start = 0;
-    let poolStep = reducedMotion ? POOL_BLOCKS.length - 1 : 0;
+    let poolStep = POOL_BLOCKS.length - 1;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR) *
@@ -165,20 +181,35 @@ export function Background() {
     const draw = (now: number) => {
       if (disposed) return;
       if (!start) start = now;
-      const seconds = reducedMotion ? 0 : (now - start) / 1000;
+      const ms = now - start;
+      const seconds = reducedMotion ? 0 : ms / 1000;
       const drift = reducedMotion ? 0 : 0.5 - 0.5 * Math.cos((2 * Math.PI * seconds) / DRIFT_PERIOD_S);
+      const ambient = ms - AMBIENT_START_MS;
       gl.uniform1f(u.time, seconds);
       gl.uniform1f(u.zoom, 1 + 0.01 * drift);
       gl.uniform1f(u.pixel, POOL_BLOCKS[poolStep] * dpr);
       gl.uniform1f(u.feature, featureRef.current ? 1 : 0);
-      const drawn = reducedMotion ? 1 : Math.min(1, Math.max(0, (seconds - PATH_DELAY_S) / PATH_DRAW_S));
-      gl.uniform1f(u.pathDrawn, drawn * (PATH_SEGMENTS + PATH_STAGGER));
+      gl.uniform1f(u.bright, finished ? 1 : DIM + (1 - DIM) * easeOut(clamp01(ms / BRIGHTEN_MS)));
+      gl.uniform1f(u.topo, finished ? 1 : easeOut(clamp01(ambient / CONTOUR_FADE_MS)));
+      gl.uniform1f(u.pathDrawn, (finished ? 1 : clamp01(ambient / PATH_DRAW_MS)) * PATH_SEGMENTS);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (!reducedMotion) frame = requestAnimationFrame(draw);
     };
     const redraw = () => {
       resize();
       if (reducedMotion) draw(performance.now());
+    };
+
+    // Replays the pooled load: coarse squares resolving to the sharp image.
+    const pool = () => {
+      if (reducedMotion) return;
+      poolStep = 0;
+      const advance = () => {
+        if (disposed || poolStep >= POOL_BLOCKS.length - 1) return;
+        poolStep += 1;
+        window.setTimeout(advance, STEP_MS);
+      };
+      window.setTimeout(advance, STEP_MS);
     };
 
     const image = new Image();
@@ -196,18 +227,13 @@ export function Background() {
       resize();
       setRenderer("webgl");
       frame = requestAnimationFrame(draw);
-      const advance = () => {
-        if (disposed || poolStep >= POOL_BLOCKS.length - 1) return;
-        poolStep += 1;
-        window.setTimeout(advance, STEP_MS);
-      };
-      window.setTimeout(advance, STEP_MS);
     };
     image.onerror = () => setRenderer("still");
     image.src = IMAGE_SRC;
 
-    // Konami code toggles the feature map. A wrong key restarts the sequence,
-    // or counts as its first step when it is itself the first key.
+    // Konami code toggles the feature map, resolving it from pooled blocks.
+    // A wrong key restarts the sequence, or counts as its first step when it
+    // is itself the first key.
     let progress = 0;
     const onKey = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
@@ -217,6 +243,7 @@ export function Background() {
       featureRef.current = !featureRef.current;
       setFeature(featureRef.current);
       redraw();
+      if (featureRef.current) pool();
     };
 
     window.addEventListener("resize", redraw);
@@ -224,6 +251,7 @@ export function Background() {
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
+      stopSkip();
       window.clearInterval(clock);
       window.removeEventListener("resize", redraw);
       window.removeEventListener("keydown", onKey);

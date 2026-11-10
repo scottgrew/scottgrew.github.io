@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { introSeen, onSkip } from "./intro";
 import styles from "./NameCloud.module.css";
 
 // The name as a lidar point cloud. The letters are sampled into a few
@@ -11,8 +12,10 @@ import styles from "./NameCloud.module.css";
 // the DOM for screen readers and shows as plain text without JavaScript.
 
 const SCATTER_MARGIN = 48; // CSS px the canvas extends past the heading, at most
-const SCAN_DELAY_MS = 450;
-const SCAN_MS = 1300;
+// The opening's hero moment: the scan starts 150 ms in and resolves the
+// name in 950 ms, finished at about 1.1 s.
+const SCAN_DELAY_MS = 150;
+const SCAN_MS = 950;
 const SPRING = 0.075; // pull toward the letter per frame
 const DAMPING = 0.78; // velocity kept per frame
 const CURSOR_RADIUS = 56;
@@ -92,7 +95,10 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     let width = 0;
     let height = 0;
     let dpr = 1;
-    let start = 0;
+    // With reduced motion, on a later load in the same visit, or after any
+    // input, the name is simply there.
+    let instant = reduced || introSeen();
+    let scanStart = Infinity;
     let frame = 0;
     let disposed = false;
     const cursor = { x: -1e4, y: -1e4 };
@@ -110,20 +116,19 @@ export function NameCloud({ text, className }: { text: string; className?: strin
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       points = samplePoints(heading, text, width, height);
-      if (reduced) points.forEach((p) => ((p.x = p.tx), (p.y = p.ty)));
+      if (instant) points.forEach((p) => ((p.x = p.tx), (p.y = p.ty)));
       heading.dataset.cloud = points.length ? "ready" : "off";
     };
 
     const draw = (now: number) => {
       if (disposed) return;
-      if (!start) start = now;
-      const elapsed = now - start;
-      const beam = reduced ? Infinity : ((elapsed - SCAN_DELAY_MS) / SCAN_MS) * width;
+      const beam = instant ? Infinity : ((now - scanStart) / SCAN_MS) * width;
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, width, height);
 
       const size = Math.max(1.8, parseFloat(getComputedStyle(heading).fontSize) / 20);
       for (const p of points) {
+        if (!instant && scanStart === Infinity) continue;
         if (p.tx <= beam) {
           const shimmer = reduced ? 0 : 0.35 * Math.sin(now / 520 + p.phase);
           let ax = (p.tx + shimmer - p.x) * SPRING;
@@ -182,10 +187,17 @@ export function NameCloud({ text, className }: { text: string; className?: strin
       }, 120);
     });
 
+    const stopSkip = onSkip(() => {
+      if (instant) return;
+      instant = true;
+      points.forEach((p) => ((p.x = p.tx), (p.y = p.ty), (p.vx = 0), (p.vy = 0)));
+    });
+
     document.fonts.ready.then(() => {
       if (disposed) return;
       layout();
       observer.observe(heading);
+      scanStart = performance.now() + SCAN_DELAY_MS;
       if (reduced) draw(performance.now());
       else frame = requestAnimationFrame(draw);
     });
@@ -195,6 +207,7 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     }
     return () => {
       disposed = true;
+      stopSkip();
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.clearTimeout(resizeTimer);

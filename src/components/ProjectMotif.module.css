@@ -48,18 +48,6 @@
   fill-opacity: 0.14;
 }
 
-/* The sweep turns once every six seconds, a slowed-down lidar spin. */
-.sweep {
-  animation: spin 6s linear infinite;
-  transform-origin: 0 0;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(-360deg);
-  }
-}
-
 @keyframes draw {
   from {
     stroke-dashoffset: 1;
@@ -67,7 +55,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sweep,
   .faintDraw,
   .accentDraw {
     animation: none;

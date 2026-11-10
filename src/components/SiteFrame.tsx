@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ViewTransition, useEffect, useRef, useState } from "react";
 import { home, navItems, titleTransition } from "@/content/site";
-import { Eggs } from "./Eggs";
+import { ConsoleSummary } from "./Eggs";
+import { introSeen, listenForSkipInput, markIntroSeen, onSkip } from "./intro";
 import { InfoLine } from "./InfoLine";
 import { Shortcuts } from "./Shortcuts";
 import { NameCloud } from "./NameCloud";
@@ -12,9 +13,9 @@ import { SGMark } from "./SGMark";
 import { SkipConnection } from "./SkipConnection";
 import styles from "./SiteFrame.module.css";
 
-// How long the first-load entrance runs before its class is dropped, so the
-// stagger plays once per visit and never again on later navigations.
-const INTRO_MS = 1800;
+// The opening is finished by this point: the name has resolved and the
+// frame has faded in. The contours and descent keep arriving behind it.
+const OPENING_MS = 1200;
 
 // "/throughline/" and "/throughline" are the same page.
 function normalize(pathname: string) {
@@ -117,22 +118,36 @@ function TopBar({ current }: { current: string }) {
 export function SiteFrame({ children }: { children: React.ReactNode }) {
   const current = normalize(usePathname());
   const isHome = current === "/";
-  const [intro, setIntro] = useState(true);
+  // "running" plays the opening's fade-ins once; "done" leaves everything
+  // plain. The first render is "running" so the CSS plays even before the
+  // page's JavaScript arrives; a finished visit or any input ends it at once.
+  const [phase, setPhase] = useState<"running" | "done">("running");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIntro(false), INTRO_MS);
-    return () => window.clearTimeout(timer);
+    const finish = () => {
+      markIntroSeen();
+      setPhase("done");
+    };
+    const stopInput = listenForSkipInput();
+    const stopSkip = onSkip(finish);
+    const timer = window.setTimeout(finish, introSeen() ? 0 : OPENING_MS);
+    return () => {
+      stopInput();
+      stopSkip();
+      window.clearTimeout(timer);
+    };
   }, []);
+  const intro = phase === "running";
 
   return (
     <>
       <div className={styles.shade} data-view={isHome ? "home" : "page"} aria-hidden="true" />
-      <Eggs active={isHome} />
+      <ConsoleSummary />
       <Shortcuts />
       {isHome ? <InfoLine /> : null}
       <header
         className={`${styles.frame} ${isHome ? styles.homeFrame : styles.barFrame} ${
-          intro ? styles.intro : ""
+          phase === "running" ? styles.intro : ""
         }`}
         data-view={isHome ? "home" : "page"}
       >

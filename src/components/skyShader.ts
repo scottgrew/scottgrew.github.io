@@ -32,13 +32,14 @@ uniform float u_feature;     // 1 shows the Sobel feature map
 uniform float u_zoom;        // slow drift, 1.00 to 1.01
 uniform float u_showMask;    // debug: tint the moving regions red
 uniform vec4 u_ridge[6];      // RIDGE packed four to a vector (21 used)
-uniform vec4 u_paths[16];     // 2 descents × 16 steps, two points per vector, image space
-uniform float u_pathDrawn;    // segments drawn so far on the first descent (fractional)
+uniform vec4 u_paths[8];      // the descent's 16 steps, two points per vector, image space
+uniform float u_pathDrawn;    // segments drawn so far (fractional)
+uniform float u_topo;         // contour opacity, 0 to 1, fading in after the opening
+uniform float u_bright;       // opening: the scene brightens from dim to normal
 uniform vec3 u_grade;         // time-of-day colour grade for the visitor's local hour
 uniform float u_night;        // 0 by day, 1 at night: stars come out
 
 const float CONTOURS_PER_UNIT = 5.5;
-const float PATH_STAGGER = 4.0;
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -154,29 +155,23 @@ vec3 topography(vec2 uv, vec3 color, float rock) {
   float w = (abs(height(uv + vec2(px, 0.0)) - h) + abs(height(uv + vec2(0.0, px)) - h)) * CONTOURS_PER_UNIT;
   float f = abs(fract(c + 0.5) - 0.5);
   float line = 1.0 - smoothstep(w * 0.6, w * 1.6 + 1e-4, f);
-  color = mix(color, vec3(1.0), line * 0.2 * rock);
+  color = mix(color, vec3(1.0), line * 0.2 * rock * u_topo);
 
-  // Two descents, one each side of the name, like training runs from
-  // different random starts; the second begins PATH_STAGGER segments after
-  // the first and is drawn a little fainter.
+  // The descent, drawn step by step down the right-hand mountain.
   vec3 accent = vec3(0.949, 0.604, 0.29);
-  for (int i = 0; i < 2; i++) {
-    float drawn = u_pathDrawn - float(i) * PATH_STAGGER;
-    float strength = i == 0 ? 0.95 : 0.7;
-    float d = 1e5;
-    float dot_ = 1e5;
-    for (int s = 0; s < 15; s++) {
-      float k = float(s);
-      if (k < drawn) {
-        vec2 a = PATH_POINT(i * 16 + s);
-        vec2 b = mix(a, PATH_POINT(i * 16 + s + 1), clamp(drawn - k, 0.0, 1.0));
-        d = min(d, segmentDistance(uv, a, b));
-        dot_ = min(dot_, length((uv - a) * u_imageSize));
-      }
+  float d = 1e5;
+  float dot_ = 1e5;
+  for (int s = 0; s < 15; s++) {
+    float k = float(s);
+    if (k < u_pathDrawn) {
+      vec2 a = PATH_POINT(s);
+      vec2 b = mix(a, PATH_POINT(s + 1), clamp(u_pathDrawn - k, 0.0, 1.0));
+      d = min(d, segmentDistance(uv, a, b));
+      dot_ = min(dot_, length((uv - a) * u_imageSize));
     }
-    color = mix(color, accent, (1.0 - smoothstep(1.0, 2.2, d)) * strength * rock);
-    color = mix(color, accent, (1.0 - smoothstep(2.5, 4.0, dot_)) * strength * rock);
   }
+  color = mix(color, accent, (1.0 - smoothstep(1.0, 2.2, d)) * 0.9 * rock);
+  color = mix(color, accent, (1.0 - smoothstep(2.5, 4.0, dot_)) * 0.9 * rock);
   return color;
 }
 
@@ -232,7 +227,7 @@ void main() {
     vec2 screen = frag / u_resolution - 0.5;
     float vignette = 1.0 - smoothstep(0.35, 0.95, length(screen * vec2(1.0, 0.85))) * 0.45;
     float dither = (hash(gl_FragCoord.xy) - 0.5) / 255.0;
-    gl_FragColor = vec4(liveColor(uv) * vignette + dither, 1.0);
+    gl_FragColor = vec4(liveColor(uv) * vignette * u_bright + dither, 1.0);
     return;
   }
 
