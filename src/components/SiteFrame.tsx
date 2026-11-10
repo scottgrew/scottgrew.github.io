@@ -6,7 +6,6 @@ import { ViewTransition, useEffect, useRef, useState } from "react";
 import { home, navItems, titleTransition } from "@/content/site";
 import { ConsoleSummary } from "./Eggs";
 import { COLUMN_DONE, NAME_DONE, SKY_RESOLVING, after, introSeen, listenForSkipInput, markIntroSeen, onSkip, signal } from "./intro";
-import { InfoLine } from "./InfoLine";
 import { NameCloud } from "./NameCloud";
 import { SocialLink } from "./SocialLink";
 import { SiteMark } from "./SiteMark";
@@ -160,7 +159,6 @@ export function SiteFrame({ children }: { children: React.ReactNode }) {
     <>
       <div className={styles.shade} data-view={isHome ? "home" : "page"} aria-hidden="true" />
       <ConsoleSummary />
-      {isHome ? <InfoLine /> : null}
       <header
         className={`${styles.frame} ${isHome ? styles.homeFrame : styles.barFrame} ${
           phase === "running" ? styles.intro : ""
