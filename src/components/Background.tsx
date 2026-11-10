@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { introSeen, onSkip } from "./intro";
+import { SKY_RESOLVING, introSeen, onSkip, signal } from "./intro";
 import { FRAGMENT_SHADER, RIDGE, VERTEX_SHADER } from "./skyShader";
 import { descendMountain, PATH_SEGMENTS, packRidge } from "./terrain";
 import styles from "./Background.module.css";
@@ -13,18 +13,16 @@ const KONAMI = [
   "arrowleft", "arrowright", "arrowleft", "arrowright", "b", "a",
 ];
 
-// Opening, in ms from the first frame: the scene brightens from DIM to full,
-// then the contours fade in and the descent draws, quietly, behind the page.
-const DIM = 0.55;
-const BRIGHTEN_MS = 700;
-const AMBIENT_START_MS = 1200;
-const CONTOUR_FADE_MS = 3500;
-const PATH_DRAW_MS = 3800;
-
-// The blocky "pooled" load, kept as part of the Konami egg: the feature map
-// resolves from coarse squares. Block sizes in CSS pixels, STEP_MS each.
+// Opening, first beat: the sky resolves from coarse "max-pooled" blocks to
+// the sharp image, one block size every STEP_MS; when it reaches
+// HAND_OFF_STEP (about 0.6 s) the column starts building. The Konami feature
+// map replays the same resolve.
 const POOL_BLOCKS = [64, 48, 32, 16, 8, 4, 2, 1];
-const STEP_MS = 110;
+const STEP_MS = 125;
+const HAND_OFF_STEP = 5;
+
+// The contours and the gradient-descent path are static: always drawn in
+// full on the rock, part of the landscape rather than an animation.
 
 // Device-pixel cap keeps the shader cheap on large high-DPI screens; the
 // feature map samples the scene nine times per pixel, so it runs at half that.
@@ -65,8 +63,6 @@ function visitorHour() {
   return now.getHours() + now.getMinutes() / 60;
 }
 
-const easeOut = (x: number) => 1 - (1 - x) * (1 - x) * (1 - x);
-const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
@@ -109,6 +105,7 @@ export function Background() {
     const gl = canvas.getContext("webgl", { antialias: false, alpha: false });
     if (!gl) {
       setRenderer("still");
+      signal(SKY_RESOLVING);
       return;
     }
 
@@ -118,6 +115,7 @@ export function Background() {
     } catch (error) {
       console.warn("Live sky unavailable, showing the still photo.", error);
       setRenderer("still");
+      signal(SKY_RESOLVING);
       return;
     }
     gl.useProgram(program);
@@ -160,14 +158,15 @@ export function Background() {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // Reduced motion, a later load in the same visit, or any input: finished.
     let finished = reducedMotion || introSeen();
+    let poolStep = finished ? POOL_BLOCKS.length - 1 : 0;
     const stopSkip = onSkip(() => {
       finished = true;
+      poolStep = POOL_BLOCKS.length - 1;
     });
     let dpr = 1;
     let frame = 0;
     let disposed = false;
     let start = 0;
-    let poolStep = POOL_BLOCKS.length - 1;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR) *
@@ -184,14 +183,13 @@ export function Background() {
       const ms = now - start;
       const seconds = reducedMotion ? 0 : ms / 1000;
       const drift = reducedMotion ? 0 : 0.5 - 0.5 * Math.cos((2 * Math.PI * seconds) / DRIFT_PERIOD_S);
-      const ambient = ms - AMBIENT_START_MS;
       gl.uniform1f(u.time, seconds);
       gl.uniform1f(u.zoom, 1 + 0.01 * drift);
       gl.uniform1f(u.pixel, POOL_BLOCKS[poolStep] * dpr);
       gl.uniform1f(u.feature, featureRef.current ? 1 : 0);
-      gl.uniform1f(u.bright, finished ? 1 : DIM + (1 - DIM) * easeOut(clamp01(ms / BRIGHTEN_MS)));
-      gl.uniform1f(u.topo, finished ? 1 : easeOut(clamp01(ambient / CONTOUR_FADE_MS)));
-      gl.uniform1f(u.pathDrawn, (finished ? 1 : clamp01(ambient / PATH_DRAW_MS)) * PATH_SEGMENTS);
+      gl.uniform1f(u.bright, 1);
+      gl.uniform1f(u.topo, 1);
+      gl.uniform1f(u.pathDrawn, PATH_SEGMENTS);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (!reducedMotion) frame = requestAnimationFrame(draw);
     };
@@ -200,13 +198,15 @@ export function Background() {
       if (reducedMotion) draw(performance.now());
     };
 
-    // Replays the pooled load: coarse squares resolving to the sharp image.
-    const pool = () => {
+    // The pooled resolve: coarse squares down to the sharp image. On the
+    // opening it hands off to the column part-way through.
+    const pool = (handOff: boolean) => {
       if (reducedMotion) return;
       poolStep = 0;
       const advance = () => {
         if (disposed || poolStep >= POOL_BLOCKS.length - 1) return;
         poolStep += 1;
+        if (handOff && poolStep === HAND_OFF_STEP) signal(SKY_RESOLVING);
         window.setTimeout(advance, STEP_MS);
       };
       window.setTimeout(advance, STEP_MS);
@@ -227,8 +227,13 @@ export function Background() {
       resize();
       setRenderer("webgl");
       frame = requestAnimationFrame(draw);
+      if (finished) signal(SKY_RESOLVING);
+      else pool(true);
     };
-    image.onerror = () => setRenderer("still");
+    image.onerror = () => {
+      setRenderer("still");
+      signal(SKY_RESOLVING);
+    };
     image.src = IMAGE_SRC;
 
     // Konami code toggles the feature map, resolving it from pooled blocks.
@@ -243,7 +248,7 @@ export function Background() {
       featureRef.current = !featureRef.current;
       setFeature(featureRef.current);
       redraw();
-      if (featureRef.current) pool();
+      if (featureRef.current) pool(false);
     };
 
     window.addEventListener("resize", redraw);

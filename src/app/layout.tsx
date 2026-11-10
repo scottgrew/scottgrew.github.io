@@ -56,7 +56,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta httpEquiv="Content-Security-Policy" content={CONTENT_SECURITY_POLICY} />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
         <noscript>
-          <style>{`.bg-root{background-image:url("/media/background.jpg")}.bg-root canvas{display:none}`}</style>
+          <style>{`.bg-root{background-image:url("/media/background.jpg")}.bg-root canvas{display:none}[data-intro] [class*="step"],div[data-intro]{opacity:1!important}`}</style>
         </noscript>
       </head>
       <body>

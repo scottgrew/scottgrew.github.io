@@ -270,9 +270,16 @@
 
 /* ---------- First-load entrance (home only, once per visit) ---------- */
 
-@keyframes fadeIn {
+@keyframes rise {
   from {
     opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@keyframes draw {
+  from {
+    transform: scaleY(0);
   }
 }
 
@@ -283,14 +290,25 @@
   }
 }
 
-/* The frame fades in as one piece while the name resolves; the box holding
-   the name is shown at once, so the name is the moment, not the frame. */
-.intro .step:not(.s3) {
-  animation: fadeIn 300ms 400ms ease-out both;
+/* The column builds while the sky finishes sharpening: each piece rises in,
+   the connector lines draw downward, staggered about 100 ms apart. */
+.intro .step {
+  animation: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+.intro .line {
+  animation-name: draw;
+}
+
+.intro .s1 { animation-delay: 0ms; }
+.intro .s2 { animation-delay: 120ms; }
+.intro .s3 { animation-delay: 220ms; }
+.intro .s4 { animation-delay: 380ms; }
+.intro .s5 { animation-delay: 480ms; }
+.intro .s6 { animation-delay: 600ms; }
+
 .introContent {
-  animation: contentIn 500ms 150ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: contentIn 600ms 100ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 /* ---------- Narrow screens ---------- */

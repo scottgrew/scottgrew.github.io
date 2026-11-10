@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { introSeen, onSkip } from "./intro";
+import { COLUMN_DONE, NAME_DONE, after, hasHappened, introSeen, onSkip, signal } from "./intro";
 import styles from "./NameCloud.module.css";
 
 // The name as a lidar point cloud. The letters are sampled into a few
@@ -12,10 +12,10 @@ import styles from "./NameCloud.module.css";
 // the DOM for screen readers and shows as plain text without JavaScript.
 
 const SCATTER_MARGIN = 48; // CSS px the canvas extends past the heading, at most
-// The opening's hero moment: the scan starts 150 ms in and resolves the
-// name in 950 ms, finished at about 1.1 s.
-const SCAN_DELAY_MS = 150;
-const SCAN_MS = 950;
+// The scan starts once the name's box has appeared (the column signals it)
+// and resolves the name in SCAN_MS. If that signal never comes, scan anyway.
+const SCAN_MS = 1200;
+const COLUMN_FALLBACK_MS = 4000;
 const SPRING = 0.075; // pull toward the letter per frame
 const DAMPING = 0.78; // velocity kept per frame
 const CURSOR_RADIUS = 56;
@@ -97,8 +97,9 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     let dpr = 1;
     // With reduced motion, on a later load in the same visit, or after any
     // input, the name is simply there.
-    let instant = reduced || introSeen();
+    let instant = reduced || introSeen() || hasHappened(NAME_DONE);
     let scanStart = Infinity;
+    let announced = instant;
     let frame = 0;
     let disposed = false;
     const cursor = { x: -1e4, y: -1e4 };
@@ -123,6 +124,10 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     const draw = (now: number) => {
       if (disposed) return;
       const beam = instant ? Infinity : ((now - scanStart) / SCAN_MS) * width;
+      if (!announced && beam > width + 40) {
+        announced = true;
+        signal(NAME_DONE);
+      }
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, width, height);
 
@@ -192,12 +197,16 @@ export function NameCloud({ text, className }: { text: string; className?: strin
       instant = true;
       points.forEach((p) => ((p.x = p.tx), (p.y = p.ty), (p.vx = 0), (p.vy = 0)));
     });
+    const stopWait = instant
+      ? () => {}
+      : after(COLUMN_DONE, () => {
+          scanStart = performance.now();
+        }, COLUMN_FALLBACK_MS);
 
     document.fonts.ready.then(() => {
       if (disposed) return;
       layout();
       observer.observe(heading);
-      scanStart = performance.now() + SCAN_DELAY_MS;
       if (reduced) draw(performance.now());
       else frame = requestAnimationFrame(draw);
     });
@@ -208,6 +217,7 @@ export function NameCloud({ text, className }: { text: string; className?: strin
     return () => {
       disposed = true;
       stopSkip();
+      stopWait();
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.clearTimeout(resizeTimer);

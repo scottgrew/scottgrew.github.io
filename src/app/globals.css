@@ -67,6 +67,23 @@ a:focus-visible {
   background: rgba(242, 154, 74, 0.35);
 }
 
+/* ---------- Opening ----------
+   Until the sky hands off, the home column and page content wait unseen
+   (intro.ts). Without JavaScript they are shown by the noscript rule in the
+   layout; with reduced motion they are shown at once. */
+
+header[data-intro="waiting"] [class*="step"],
+div[data-intro="waiting"] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  header[data-intro="waiting"] [class*="step"],
+  div[data-intro="waiting"] {
+    opacity: 1;
+  }
+}
+
 /* ---------- Page transitions (View Transitions API) ----------
    The mark, the name and the nav carry shared names, so they glide between
    the home column and the top bar. Page content blurs out and rises in. */
