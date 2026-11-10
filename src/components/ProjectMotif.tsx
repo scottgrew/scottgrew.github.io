@@ -21,7 +21,8 @@ function LidarSweep() {
           const a = (deg * Math.PI) / 180;
           return <circle key={`${r}-${deg}`} cx={r * Math.cos(a)} cy={r * Math.sin(a)} r={1.6} className={styles.point} />;
         })}
-        <g className={styles.sweep}>
+        {/* The sweep points up-left at 45°, across the rings, never parallel to the title rule. */}
+        <g transform="rotate(-135)">
           <path d="M 0 0 L 110 0 A 110 110 0 0 0 95.3 -55 Z" className={styles.wedge} />
           <line x1="0" y1="0" x2="110" y2="0" className={styles.accent} />
         </g>
