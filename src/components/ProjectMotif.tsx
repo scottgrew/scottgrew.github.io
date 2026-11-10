@@ -13,8 +13,8 @@ function LidarSweep() {
   ];
   return (
     <svg viewBox="0 0 240 150" className={styles.motif} aria-hidden="true" data-motif="lidar">
-      {/* Drawn at 90% so the rings sit lighter against the title. */}
-      <g transform="translate(200 120) scale(0.9)">
+      {/* Drawn at 81% so the rings sit lighter against the title. */}
+      <g transform="translate(200 120) scale(0.81)">
         {rings.map((r) => (
           <circle key={r} r={r} className={styles.faint} />
         ))}
