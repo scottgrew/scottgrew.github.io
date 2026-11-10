@@ -5,15 +5,16 @@ import styles from "./SiteMark.module.css";
 // in SVG so it is identical everywhere it appears.
 //
 // The axes are in the usual isometric view of a right-handed frame: x toward
-// the lower left, y toward the lower right, z up. Colours follow the red,
-// green, blue convention for x, y, z, muted to sit with the site's palette.
+// the lower left, y toward the lower right, z up. Colours come from the
+// background photo rather than the usual red, green and blue: the sunset
+// accent for x, snow for y and the dusk sky for z.
 const ORIGIN = [44, 50] as const;
 const AXIS_LENGTH = 26;
 const HEAD = 7; // arrowhead length
 export const FRAME_AXES = [
-  { name: "x", color: "#d9675f", direction: [-Math.sqrt(3) / 2, 0.5] },
-  { name: "y", color: "#6fb877", direction: [Math.sqrt(3) / 2, 0.5] },
-  { name: "z", color: "#6b93d6", direction: [0, -1] },
+  { name: "x", color: "#f29a4a", direction: [-Math.sqrt(3) / 2, 0.5] },
+  { name: "y", color: "#e8ecf2", direction: [Math.sqrt(3) / 2, 0.5] },
+  { name: "z", color: "#8fa9d4", direction: [0, -1] },
 ] as const;
 
 // One axis: a line from the origin, ending in a filled arrowhead.

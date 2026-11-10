@@ -34,7 +34,7 @@ test("home shows the name, the nav, the skip connection and the live sky", async
   await expect(skip.locator("circle")).toHaveCount(1);
   for (const fill of await skip.locator("path").evaluateAll((els) => els.map((el) => getComputedStyle(el).fill)))
     expect(fill).toBe("none");
-  expect(await page.locator("header svg[role=img] [data-axis=x] path").last().evaluate((el) => getComputedStyle(el).fill)).toBe("rgb(217, 103, 95)");
+  expect(await page.locator("header svg[role=img] [data-axis=x] path").last().evaluate((el) => getComputedStyle(el).fill)).toBe("rgb(242, 154, 74)");
   await expect(page.locator(".bg-root")).toHaveAttribute("data-renderer", "webgl");
   expect(errors).toEqual([]);
 });
