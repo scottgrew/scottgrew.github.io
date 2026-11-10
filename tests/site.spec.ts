@@ -154,6 +154,12 @@ test("project pages end with the footer", async ({ page }) => {
 });
 
 test("contact is linked beside GitHub and the form checks its fields before sending", async ({ page }) => {
+  // Answer the form service locally so a test run never emails Scott.
+  let posted: Record<string, string> | null = null;
+  await page.route("https://api.web3forms.com/**", async (route) => {
+    posted = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true }) });
+  });
   await page.goto("/");
   await page.waitForTimeout(800);
   await page.getByRole("link", { name: "Contact", exact: true }).first().click();
@@ -165,5 +171,6 @@ test("contact is linked beside GitHub and the form checks its fields before send
   await page.getByLabel("Email").fill("visitor@example.com");
   await page.getByLabel("Message").fill("Hello, this is a test message.");
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByRole("status")).toContainText(/isn't connected yet|on its way/);
+  await expect(page.getByRole("status")).toContainText("on its way");
+  expect(posted).toMatchObject({ name: "Test Visitor", email: "visitor@example.com", message: "Hello, this is a test message." });
 });
