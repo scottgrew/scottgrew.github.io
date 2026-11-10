@@ -25,14 +25,16 @@ export const home = {
 };
 
 // The contact form posts to Web3Forms, which forwards each message to
-// Scott's inbox. The access key only lets visitors send to that inbox, so it
-// is safe in the page. Until it is filled in, the form says it isn't
+// Scott's inbox. The access key is send-only and reaches the browser by
+// design, but it is kept out of the repository: builds read it from
+// NEXT_PUBLIC_WEB3FORMS_KEY (.env.local on Scott's Mac, a GitHub Actions
+// secret for the published site). Without it the form says it isn't
 // connected instead of pretending to send.
 export const contact = {
   title: "Contact",
   description: "Contact Scott Grew.",
   endpoint: "https://api.web3forms.com/submit",
-  accessKey: "",
+  accessKey: process.env.NEXT_PUBLIC_WEB3FORMS_KEY ?? "",
 };
 
 export const about = {
