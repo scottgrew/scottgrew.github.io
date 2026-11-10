@@ -34,6 +34,8 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
     let lastMove = performance.now();
     let frame = 0;
     let heading = 0;
+    let turn = 0; // rad/s, smoothed over recent scans
+    let scanHeading = 0;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -63,14 +65,21 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
         if (track.misses >= limit) track = null;
       }
       moved = false;
+      if (!track) return;
+      const [, , svx, svy] = track.estimate.mean;
+      if (Math.hypot(svx, svy) < 40) return;
+      const next = Math.atan2(svy, svx);
+      const change = Math.atan2(Math.sin(next - scanHeading), Math.cos(next - scanHeading));
+      turn = Math.max(-5, Math.min(5, 0.75 * turn + 0.25 * (change / SCAN_S)));
+      scanHeading = next;
     };
 
-    const draw = () => {
+    const draw = (now: number) => {
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
       if (!track) return;
-      // Drawn as of the last scan, not projected to this frame, so the box
-      // trails the cursor slightly, as a real tracker lags its sensor.
-      const shown = track.estimate;
+      // Projected to this frame so it moves smoothly; it trails the cursor
+      // slightly because the filter smooths each reading.
+      const shown = predict(track.estimate, (now - lastScan) / 1000);
       const [x, y, vx, vy] = shown.mean;
       const v = Math.hypot(vx, vy);
       // The box turns with the motion, and holds its last heading when slow.
@@ -88,11 +97,15 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
       context.globalAlpha = 0.85;
       context.setLineDash([2, 4]);
       context.beginPath();
+      // The forecast curves at the cursor's recent turn rate, so it points
+      // where the motion is heading rather than only straight ahead.
       context.moveTo(x, y);
-      let ahead = shown;
-      for (let t = 0; t < FORECAST_S; t += SCAN_S) {
-        ahead = predict(ahead, SCAN_S);
-        context.lineTo(ahead.mean[0], ahead.mean[1]);
+      let [fx, fy, fh] = [x, y, heading];
+      for (let t = 0; t < FORECAST_S; t += 0.05) {
+        fh += turn * 0.05;
+        fx += v * Math.cos(fh) * 0.05;
+        fy += v * Math.sin(fh) * 0.05;
+        context.lineTo(fx, fy);
       }
       context.stroke();
       context.globalAlpha = 1;
@@ -113,7 +126,7 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
         lastScan += SCAN_S * 1000;
         scan();
       }
-      draw();
+      draw(now);
       if (!track && now - lastMove > IDLE_OFF_MS) onDone();
     };
     frame = requestAnimationFrame(loop);
