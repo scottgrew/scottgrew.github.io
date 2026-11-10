@@ -30,7 +30,7 @@ export const home = {
 // connected instead of pretending to send.
 export const contact = {
   title: "Contact",
-  intro: "Send me a message and it comes straight to my inbox.",
+  description: "Contact Scott Grew.",
   endpoint: "https://api.web3forms.com/submit",
   accessKey: "",
 };
