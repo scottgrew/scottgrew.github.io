@@ -1,4 +1,4 @@
-.initials,
+.symbol,
 .problem {
   transition: opacity 280ms ease;
 }
@@ -7,8 +7,8 @@
   opacity: 0;
 }
 
-a:hover > .xor .initials,
-a:focus-visible > .xor .initials {
+a:hover > .xor .symbol,
+a:focus-visible > .xor .symbol {
   opacity: 0;
 }
 

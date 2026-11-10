@@ -1,5 +1,5 @@
 import { home } from "@/content/site";
-import { SGMark } from "./SGMark";
+import { SiteMark } from "./SiteMark";
 import { SocialLink } from "./SocialLink";
 import styles from "./Footer.module.css";
 
@@ -10,7 +10,7 @@ export function Footer() {
   return (
     <footer className={styles.footer}>
       <div className={styles.sign}>
-        <SGMark size={30} />
+        <SiteMark size={30} />
         <span>Updated {UPDATED}</span>
       </div>
       <ul className={styles.links}>

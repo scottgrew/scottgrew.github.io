@@ -55,13 +55,12 @@ export default async function OpengraphImage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#ffffff",
-              fontSize: 34,
-              fontWeight: 600,
-              letterSpacing: "8px",
             }}
           >
-            SG
+            {/* The site mark, ⊕: the cross spans the same share as on the site. */}
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <path d="M 60 26 V 94 M 26 60 H 94" stroke="#ffffff" strokeWidth="2" />
+            </svg>
           </div>
           <p
             style={{

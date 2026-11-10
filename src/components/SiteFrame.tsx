@@ -9,7 +9,7 @@ import { COLUMN_DONE, NAME_DONE, SKY_RESOLVING, after, introSeen, listenForSkipI
 import { InfoLine } from "./InfoLine";
 import { NameCloud } from "./NameCloud";
 import { SocialLink } from "./SocialLink";
-import { SGMark } from "./SGMark";
+import { SiteMark } from "./SiteMark";
 import { SkipConnection } from "./SkipConnection";
 import styles from "./SiteFrame.module.css";
 
@@ -56,7 +56,7 @@ function Mark({ size, xor = false }: { size: number; xor?: boolean }) {
   return (
     <ViewTransition name="site-mark">
       <Link href="/" className={styles.markLink} aria-label="Scott Grew, home">
-        <SGMark size={size} xor={xor} />
+        <SiteMark size={size} xor={xor} />
       </Link>
     </ViewTransition>
   );

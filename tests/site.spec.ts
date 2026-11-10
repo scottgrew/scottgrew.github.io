@@ -28,13 +28,13 @@ test("home shows the name, the nav, the skip connection and the live sky", async
   await page.waitForTimeout(2200);
   expect(await opacity(page, "h1")).toBe("1");
   expect(await opacity(page, "nav[aria-label=Main]")).toBe("1");
-  // The skip connection is a hairline, never a filled shape, and the SG
-  // monogram is drawn in white, not the browser's default black.
+  // The skip connection is a hairline, never a filled shape, and the ⊕
+  // mark is drawn in white, not the browser's default black.
   const skip = page.locator("header svg[aria-hidden=true]");
   await expect(skip.locator("circle")).toHaveCount(1);
   for (const fill of await skip.locator("path").evaluateAll((els) => els.map((el) => getComputedStyle(el).fill)))
     expect(fill).toBe("none");
-  expect(await page.locator("header svg[role=img] text").first().evaluate((el) => getComputedStyle(el).fill)).toBe("rgb(255, 255, 255)");
+  expect(await page.locator("header svg[role=img] [data-part=add]").first().evaluate((el) => getComputedStyle(el).stroke)).toBe("rgb(255, 255, 255)");
   await expect(page.locator(".bg-root")).toHaveAttribute("data-renderer", "webgl");
   expect(errors).toEqual([]);
 });
