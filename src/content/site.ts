@@ -7,7 +7,7 @@ export type SiteLink = { label: string; href: string };
 export type Project = {
   slug: string;
   title: string;
-  demo?: { src: string; alt: string; caption: string };
+  demo?: { src: string; width: number; height: number; label: string; caption: string };
   body: string[];
   code: string;
 };
@@ -49,8 +49,10 @@ export const projects: Project[] = [
     slug: "throughline",
     title: "Throughline",
     demo: {
-      src: "/media/throughline-turn.gif",
-      alt: "Tracked cars shown as blue boxes moving through a turn, each with a line ahead of it showing where it is expected to go",
+      src: "/media/throughline-turn.mp4",
+      width: 960,
+      height: 518,
+      label: "Tracked cars shown as blue boxes moving through a turn, each with a line ahead of it showing where it is expected to go",
       caption: "Blue boxes are tracked cars. The line in front of each one is where the tracker expects it to go.",
     },
     body: [

@@ -13,9 +13,17 @@ export function ProjectView({ project }: { project: Project }) {
     <Page title={project.title} transitionName={`title-${project.slug}`} motif={<ProjectMotif slug={project.slug} />}>
       {project.demo ? (
         <figure className={styles.demo}>
-          {/* A GIF in a static export: next/image would add nothing here. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={project.demo.src} alt={project.demo.alt} decoding="async" />
+          <video
+            src={project.demo.src}
+            width={project.demo.width}
+            height={project.demo.height}
+            aria-label={project.demo.label}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+          />
           <figcaption>{project.demo.caption}</figcaption>
         </figure>
       ) : null}

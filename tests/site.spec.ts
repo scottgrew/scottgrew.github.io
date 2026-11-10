@@ -230,3 +230,10 @@ test("the MotionNet paths give the cursor six futures until the next click", asy
   await page.mouse.click(40, 40);
   await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(0);
 });
+
+test("the Throughline demo is a looping video that loads", async ({ page }) => {
+  await page.goto("/throughline/");
+  const video = page.locator("figure video");
+  await expect(video).toHaveAttribute("loop", "");
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
+});
