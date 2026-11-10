@@ -216,9 +216,17 @@ test("the point-cloud name never shows an empty canvas while the window resizes"
 
 test("the Throughline radar starts tracking the cursor", async ({ page }) => {
   await page.goto("/throughline/");
-  await page.locator("[data-egg-trigger=tracker]").hover();
+  await page.locator("[data-egg-trigger=tracker]").click();
   await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(1);
   await page.mouse.click(40, 40);
   await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(0);
 });
 
+
+test("the MotionNet paths give the cursor six futures until the next click", async ({ page }) => {
+  await page.goto("/motionnet/");
+  await page.locator("[data-egg-trigger=futures]").click();
+  await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(1);
+  await page.mouse.click(40, 40);
+  await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(0);
+});

@@ -8,7 +8,7 @@ type Mat = number[][];
 export type Estimate = { mean: number[]; covariance: Mat };
 
 const SIGMA_ACCELERATION = 1400; // px/s², how hard a hand can change direction
-const SIGMA_MEASUREMENT = 3; // px
+const SIGMA_MEASUREMENT = 8; // px; trusting each reading a little less smooths the follow
 
 const multiply = (a: Mat, b: Mat): Mat => a.map((row) => b[0].map((_, j) => row.reduce((s, v, k) => s + v * b[k][j], 0)));
 const transpose = (a: Mat): Mat => a[0].map((_, j) => a.map((row) => row[j]));

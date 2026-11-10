@@ -1,4 +1,6 @@
-import { CursorTracker } from "./eggs/CursorTracker";
+import { ClickEgg } from "./eggs/ClickEgg";
+import { FuturesOverlay } from "./eggs/CursorFutures";
+import { TrackerOverlay } from "./eggs/CursorTracker";
 import styles from "./ProjectMotif.module.css";
 
 // Each project page carries a small drawing of its own idea next to the
@@ -99,8 +101,8 @@ function GameTree() {
 }
 
 export function ProjectMotif({ slug }: { slug: string }) {
-  if (slug === "throughline") return <CursorTracker><LidarSweep /></CursorTracker>;
-  if (slug === "motionnet") return <PathFan />;
+  if (slug === "throughline") return <ClickEgg name="tracker" overlay={TrackerOverlay}><LidarSweep /></ClickEgg>;
+  if (slug === "motionnet") return <ClickEgg name="futures" overlay={FuturesOverlay}><PathFan /></ClickEgg>;
   if (slug === "showdown") return <GameTree />;
   return null;
 }

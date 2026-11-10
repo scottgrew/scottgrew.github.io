@@ -1,15 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ellipse, predict, start, update, type Estimate } from "./cursorFilter";
 import styles from "./eggs.module.css";
 
-// Easter egg on the Throughline page: hover the radar and the tracker's own
+// Easter egg on the Throughline page: click the radar and the tracker's own
 // filter tracks your cursor. It "scans" ten times a second, as the lidar
 // does; a scan with no cursor movement is a miss. As in the tracker, a track
 // is confirmed after 3 hits and dropped after 5 misses in a row, and it draws
-// its 2σ uncertainty ellipse and a 0.6 s forecast. Any click puts it away;
-// hovering the radar again brings it back.
+// its 2σ uncertainty ellipse and a 0.6 s forecast. ClickEgg starts and stops it.
 
 const SCAN_S = 0.1;
 const HITS_TO_CONFIRM = 3;
@@ -20,7 +19,7 @@ const IDLE_OFF_MS = 5000;
 
 type Track = { id: number; estimate: Estimate; hits: number; misses: number };
 
-function Overlay({ onDone }: { onDone: () => void }) {
+export function TrackerOverlay({ onDone }: { onDone: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -69,7 +68,9 @@ function Overlay({ onDone }: { onDone: () => void }) {
     const draw = (now: number) => {
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
       if (!track) return;
-      const shown = predict(track.estimate, (now - lastScan) / 1000);
+      // Drawn as of the last scan, not projected to this frame, so the box
+      // trails the cursor slightly, as a real tracker lags its sensor.
+      const shown = track.estimate;
       const [x, y, vx, vy] = shown.mean;
       const v = Math.hypot(vx, vy);
       // The box turns with the motion, and holds its last heading when slow.
@@ -117,28 +118,13 @@ function Overlay({ onDone }: { onDone: () => void }) {
     };
     frame = requestAnimationFrame(loop);
     window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerdown", onDone);
     window.addEventListener("resize", resize);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerdown", onDone);
       window.removeEventListener("resize", resize);
     };
   }, [onDone]);
 
   return <canvas ref={canvasRef} className={styles.trackerCanvas} aria-hidden="true" data-egg="tracker" />;
-}
-
-export function CursorTracker({ children }: { children: React.ReactNode }) {
-  const [active, setActive] = useState(false);
-  const stop = useCallback(() => setActive(false), []);
-  return (
-    <>
-      <div className={styles.trigger} aria-hidden="true" data-egg-trigger="tracker" onPointerEnter={() => setActive(true)}>
-        {children}
-      </div>
-      {active ? <Overlay onDone={stop} /> : null}
-    </>
-  );
 }
