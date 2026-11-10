@@ -19,7 +19,7 @@ function validate(name: string, email: string, message: string) {
   else if (name.length > LIMITS.name) errors.name = `Keep it under ${LIMITS.name} characters.`;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errors.email = "That email address doesn't look right.";
   else if (email.length > LIMITS.email) errors.email = "That email address is too long.";
-  if (message.trim().length < LIMITS.messageMin) errors.message = "Say a little more, at least a sentence.";
+  if (message.trim().length < LIMITS.messageMin) errors.message = "That message is too short.";
   else if (message.length > LIMITS.messageMax) errors.message = `Keep it under ${LIMITS.messageMax} characters.`;
   return errors;
 }
@@ -70,7 +70,7 @@ export function ContactForm() {
   if (status.kind === "sent") {
     return (
       <p className={styles.sent} role="status">
-        Thanks, your message is on its way. I&apos;ll get back to you soon.
+        Message sent.
       </p>
     );
   }

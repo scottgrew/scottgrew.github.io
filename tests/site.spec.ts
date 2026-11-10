@@ -171,6 +171,6 @@ test("contact is linked beside GitHub and the form checks its fields before send
   await page.getByLabel("Email").fill("visitor@example.com");
   await page.getByLabel("Message").fill("Hello, this is a test message.");
   await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByRole("status")).toContainText("on its way");
+  await expect(page.getByRole("status")).toContainText("Message sent.");
   expect(posted).toMatchObject({ name: "Test Visitor", email: "visitor@example.com", message: "Hello, this is a test message." });
 });
