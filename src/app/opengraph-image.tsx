@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { FRAME_AXES, axisPaths } from "@/components/SiteMark";
 
 export const dynamic = "force-static";
 
@@ -57,11 +58,15 @@ export default async function OpengraphImage() {
               justifyContent: "center",
             }}
           >
-            {/* The site mark: a Game of Life glider, as on the site. */}
+            {/* The site mark: a robot's coordinate frame, as on the site. */}
             <svg width="120" height="120" viewBox="0 0 88 88">
-              {[[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]].map(([column, row]) => (
-                <circle key={`${column}${row}`} cx={28 + 16 * column} cy={28 + 16 * row} r="5.5" fill="#ffffff" />
-              ))}
+              {FRAME_AXES.map(({ name, color, direction }) => {
+                const { line, head } = axisPaths(direction);
+                return [
+                  <path key={`${name}-line`} d={line} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />,
+                  <path key={`${name}-head`} d={head} fill={color} />,
+                ];
+              })}
             </svg>
           </div>
           <p
