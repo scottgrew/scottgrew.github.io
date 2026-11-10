@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { FRAME_AXES, axisPaths } from "@/components/SiteMark";
+import { TETRAHEDRON } from "@/components/SiteMark";
 
 export const dynamic = "force-static";
 
@@ -58,15 +58,11 @@ export default async function OpengraphImage() {
               justifyContent: "center",
             }}
           >
-            {/* The site mark: a robot's coordinate frame, as on the site. */}
+            {/* The site mark: a tetrahedron, as on the site. */}
             <svg width="120" height="120" viewBox="0 0 88 88">
-              {FRAME_AXES.map(({ name, color, direction }) => {
-                const { line, head } = axisPaths(direction);
-                return [
-                  <path key={`${name}-line`} d={line} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />,
-                  <path key={`${name}-head`} d={head} fill={color} />,
-                ];
-              })}
+              <path d={TETRAHEDRON.edges} fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={TETRAHEDRON.hidden} fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="3 3" />
+              <circle cx={TETRAHEDRON.apex[0]} cy={TETRAHEDRON.apex[1]} r="2.4" fill="#f29a4a" />
             </svg>
           </div>
           <p

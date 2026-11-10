@@ -1,37 +1,14 @@
 import styles from "./SiteMark.module.css";
 
-// The site mark: a robot's coordinate frame, the x/y/z axis triad every
-// robotics viewer draws, in a hairline circle with an accent arc. It is drawn
-// in SVG so it is identical everywhere it appears.
-//
-// The axes are in the usual isometric view of a right-handed frame: x toward
-// the lower left, y toward the lower right, z up. Colours come from the
-// background photo rather than the usual red, green and blue: the sunset
-// accent for x, snow for y and the dusk sky for z.
-const ORIGIN = [44, 50] as const;
-const AXIS_LENGTH = 26;
-const HEAD = 7; // arrowhead length
-export const FRAME_AXES = [
-  { name: "x", color: "#f29a4a", direction: [-Math.sqrt(3) / 2, 0.5] },
-  { name: "y", color: "#e8ecf2", direction: [Math.sqrt(3) / 2, 0.5] },
-  { name: "z", color: "#8fa9d4", direction: [0, -1] },
-] as const;
-
-// One axis: a line from the origin, ending in a filled arrowhead.
-export function axisPaths(direction: readonly [number, number]) {
-  const [ox, oy] = ORIGIN;
-  const [dx, dy] = direction;
-  const tipX = ox + dx * AXIS_LENGTH;
-  const tipY = oy + dy * AXIS_LENGTH;
-  const baseX = tipX - dx * HEAD;
-  const baseY = tipY - dy * HEAD;
-  const half = HEAD * 0.5; // half the arrowhead's width, across the axis
-  const r = (n: number) => n.toFixed(1);
-  return {
-    line: `M ${ox} ${oy} L ${r(baseX)} ${r(baseY)}`,
-    head: `M ${r(tipX)} ${r(tipY)} L ${r(baseX - dy * half)} ${r(baseY + dx * half)} L ${r(baseX + dy * half)} ${r(baseY - dx * half)} Z`,
-  };
-}
+// The site mark: a tetrahedron, the solid Plato's Timaeus assigns to fire,
+// in a hairline circle with an accent arc. It is drawn as a wireframe with
+// the hidden back edge dashed, the way a 3D viewer draws one, and in SVG so
+// it is identical everywhere it appears.
+export const TETRAHEDRON = {
+  edges: "M 44 16 L 21 58 L 49 71 Z M 44 16 L 67 57 L 49 71", // the five visible edges
+  hidden: "M 21 58 L 67 57", // the back edge, behind the front face
+  apex: [44, 16] as const,
+};
 
 export function SiteMark({ size, xor = false }: { size: number; xor?: boolean }) {
   return (
@@ -45,16 +22,10 @@ export function SiteMark({ size, xor = false }: { size: number; xor?: boolean })
     >
       <circle cx="44" cy="44" r="43.5" fill="none" stroke="currentColor" strokeWidth="1" />
       <path d="M 74.8 13.3 A 43.5 43.5 0 0 1 87.5 44" fill="none" stroke="var(--accent)" strokeWidth="2" />
-      <g className={styles.symbol} data-part="frame">
-        {FRAME_AXES.map(({ name, color, direction }) => {
-          const { line, head } = axisPaths(direction);
-          return (
-            <g key={name} data-axis={name}>
-              <path d={line} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
-              <path d={head} fill={color} />
-            </g>
-          );
-        })}
+      <g className={styles.symbol} data-part="tetrahedron">
+        <path d={TETRAHEDRON.edges} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={TETRAHEDRON.hidden} fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+        <circle cx={TETRAHEDRON.apex[0]} cy={TETRAHEDRON.apex[1]} r="2.4" fill="var(--accent)" />
       </g>
       {xor ? (
         <g className={styles.problem}>

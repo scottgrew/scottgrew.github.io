@@ -28,8 +28,8 @@ test("home shows the name, the nav and the live sky", async ({ page }) => {
   await page.waitForTimeout(2200);
   expect(await opacity(page, "h1")).toBe("1");
   expect(await opacity(page, "nav[aria-label=Main]")).toBe("1");
-  // The frame mark's x axis is drawn in its colour, not the default black.
-  expect(await page.locator("header svg[role=img] [data-axis=x] path").last().evaluate((el) => getComputedStyle(el).fill)).toBe("rgb(242, 154, 74)");
+  // The tetrahedron mark is drawn in white, not the browser's default black.
+  expect(await page.locator("header svg[role=img] [data-part=tetrahedron] path").first().evaluate((el) => getComputedStyle(el).stroke)).toBe("rgb(255, 255, 255)");
   await expect(page.locator(".bg-root")).toHaveAttribute("data-renderer", "webgl");
   expect(errors).toEqual([]);
 });
