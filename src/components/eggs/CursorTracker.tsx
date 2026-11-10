@@ -7,12 +7,21 @@ import styles from "./eggs.module.css";
 // Easter egg on the Throughline page: click the radar and the tracker's own
 // filter tracks your cursor. It "scans" ten times a second, as the lidar
 // does; a scan with no cursor movement is a miss. As in the tracker, a track
-// is confirmed after 3 hits and dropped after 5 misses in a row, and it draws
-// its 2σ uncertainty ellipse and a 0.6 s forecast. ClickEgg starts and stops it.
+// is confirmed after 3 hits, and it draws its 2σ uncertainty ellipse and a
+// 0.6 s forecast. ClickEgg starts and stops it.
+//
+// Two philosophy eggs ride on it. Zeno: once the cursor stops, the box closes
+// the same fraction of the remaining gap every frame, so it gets ever closer
+// and never arrives; the label counts the distance left. The track lives 2 s
+// after the cursor stops (the tracker itself drops a track after 5 missed
+// scans) so there is time to read it. Theseus: after THESEUS_HITS scans, every
+// detection the track started from has been replaced, and it is still the
+// same ID.
 
 const SCAN_S = 0.1;
 const HITS_TO_CONFIRM = 3;
-const MISSES_TO_DELETE = 5;
+const MISSES_TO_DELETE = 20;
+const THESEUS_HITS = 30; // 3 s of continuous tracking
 const FORECAST_S = 0.6;
 const FOLLOW_S = 0.15; // the box lags a steady cursor by about speed × FOLLOW_S
 const MISSES_TENTATIVE = 2; // a new track survives one quiet scan
@@ -82,8 +91,11 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
       // The filter's estimate, projected to this frame, is the target. The
       // drawn box eases toward it with time constant FOLLOW_S, so it follows
       // behind a moving cursor and catches up when the cursor stops.
+      // While the cursor is still, the box heads for where it actually is.
       const target = predict(track.estimate, (now - lastScan) / 1000);
-      const [tx, ty, vx, vy] = target.mean;
+      const still = track.misses > 0 && cursor !== null;
+      const [px, py, vx, vy] = target.mean;
+      const [tx, ty] = still && cursor ? [cursor.x, cursor.y] : [px, py];
       if (!shown || shown.id !== track.id) shown = { id: track.id, x: tx, y: ty, time: now };
       const ease = 1 - Math.exp(-(now - shown.time) / 1000 / FOLLOW_S);
       shown = { id: track.id, x: shown.x + (tx - shown.x) * ease, y: shown.y + (ty - shown.y) * ease, time: now };
@@ -123,8 +135,18 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
       context.strokeRect(-11, -6, 22, 12);
       context.restore();
       context.font = "11px ui-monospace, monospace";
-      const state = track.hits < HITS_TO_CONFIRM ? "tentative" : track.misses ? `coasting ${track.misses}/${MISSES_TO_DELETE}` : `${Math.round(v)} px/s`;
-      context.fillText(`ID ${track.id} · ${state}`, x + 16, y - 12);
+      const gap = Math.hypot(tx - x, ty - y);
+      const state = track.hits < HITS_TO_CONFIRM ? "tentative" : still ? `Zeno · ${gap.toPrecision(2)} px to go` : `${Math.round(v)} px/s`;
+      const lines = [`ID ${track.id} · ${state}`];
+      if (track.hits >= THESEUS_HITS) lines.push(`every part replaced, still ID ${track.id}`);
+      // Labels sit right of the box, or left of it when they would run off-screen.
+      const width = Math.max(...lines.map((line) => context.measureText(line).width));
+      const left = x + 16 + width > window.innerWidth ? x - 16 - width : x + 16;
+      lines.forEach((line, i) => {
+        context.globalAlpha = i ? 0.6 : 1;
+        context.fillText(line, left, y - 12 + i * 14);
+      });
+      context.globalAlpha = 1;
     };
 
     const loop = (now: number) => {

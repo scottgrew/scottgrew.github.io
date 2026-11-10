@@ -11,6 +11,11 @@ import styles from "./eggs.module.css";
 // rate and at offsets either side; the sixth slows to a stop. Each is weighted by
 // how well it fits the motion, and the likeliest is drawn solid.
 // This illustrates MotionNet's output; it is not the model.
+//
+// Philosophy egg: hold the cursor still and all six futures coincide, since
+// every mode predicts the same place for something that is not moving. One
+// certain future is what Laplace's demon, which knows every position and
+// velocity, would see.
 
 const SCAN_S = 0.05;
 const HORIZON_S = 1;
@@ -19,6 +24,7 @@ const TURN_SPREAD = 2.5;
 const STOP_SPEED = 150; // px/s at which stopping is as likely as going on
 const MIN_SPEED = 30;
 const IDLE_OFF_MS = 6000;
+const STILL_MS = 800; // how long the cursor rests before the futures collapse
 
 type Future = { points: [number, number][]; p: number };
 
@@ -51,7 +57,6 @@ export function FuturesOverlay({ onDone }: { onDone: () => void }) {
     if (!canvas || !context) return;
     let estimate: Estimate | null = null;
     let cursor: [number, number] | null = null;
-    let moved = false;
     let heading = 0;
     let turn = 0;
     let lastScan = performance.now();
@@ -67,14 +72,14 @@ export function FuturesOverlay({ onDone }: { onDone: () => void }) {
     resize();
     const onMove = (event: PointerEvent) => {
       cursor = [event.clientX, event.clientY];
-      moved = true;
       lastMove = performance.now();
     };
 
     const scan = () => {
       if (estimate) estimate = predict(estimate, SCAN_S);
-      if (moved && cursor) estimate = estimate ? update(estimate, cursor[0], cursor[1]) : start(cursor[0], cursor[1]);
-      moved = false;
+      // A resting cursor is still measured where it is, so its speed falls to
+      // zero rather than coasting at the last velocity.
+      if (cursor) estimate = estimate ? update(estimate, cursor[0], cursor[1]) : start(cursor[0], cursor[1]);
       if (!estimate) return;
       const [, , vx, vy] = estimate.mean;
       if (Math.hypot(vx, vy) < MIN_SPEED) return;
@@ -98,7 +103,16 @@ export function FuturesOverlay({ onDone }: { onDone: () => void }) {
       if (!estimate) return;
       const [x, y, vx, vy] = estimate.mean;
       const speed = Math.hypot(vx, vy);
-      if (speed < MIN_SPEED) return;
+      if (speed < MIN_SPEED) {
+        if (!cursor || now - lastMove < STILL_MS) return;
+        context.fillStyle = "#f29a4a";
+        context.fillRect(cursor[0] - 2, cursor[1] - 2, 4, 4);
+        context.font = "11px ui-monospace, monospace";
+        const label = "6 futures, all the same · Laplace's demon";
+        const width = context.measureText(label).width;
+        context.fillText(label, cursor[0] + 14 + width > window.innerWidth ? cursor[0] - 14 - width : cursor[0] + 14, cursor[1] - 12);
+        return;
+      }
       const all = futures(x, y, heading, speed, Math.max(-6, Math.min(6, turn)));
       const best = all.reduce((a, b) => (b.p > a.p ? b : a));
       for (const f of all) {
