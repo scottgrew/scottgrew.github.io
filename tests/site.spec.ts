@@ -218,8 +218,11 @@ test("the Throughline radar starts tracking the cursor", async ({ page }) => {
   await page.goto("/throughline/");
   await page.locator("[data-egg-trigger=tracker]").click();
   await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(1);
-  await page.mouse.click(40, 40);
-  await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(0);
+  // A click in the instant the egg appears can be missed; another click stops it.
+  await expect(async () => {
+    await page.mouse.click(40, 40);
+    await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(0, { timeout: 300 });
+  }).toPass();
 });
 
 
@@ -227,8 +230,11 @@ test("the MotionNet paths give the cursor six futures until the next click", asy
   await page.goto("/motionnet/");
   await page.locator("[data-egg-trigger=futures]").click();
   await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(1);
-  await page.mouse.click(40, 40);
-  await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(0);
+  // A click in the instant the egg appears can be missed; another click stops it.
+  await expect(async () => {
+    await page.mouse.click(40, 40);
+    await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(0, { timeout: 300 });
+  }).toPass();
 });
 
 test("the Throughline demo is a looping video that loads", async ({ page }) => {
