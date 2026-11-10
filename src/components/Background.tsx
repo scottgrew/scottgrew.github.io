@@ -37,15 +37,16 @@ const FEATURE_RESOLUTION = 0.5;
 const DRIFT_PERIOD_S = 30;
 
 // The sky's colour grade through the day, by the visitor's local hour:
-// [hour, red, green, blue, night]. Cool at dawn, the photo as shot by day,
-// golden toward sunset, deep blue with stars at night; linear in between.
+// [hour, red, green, blue, night]. The photo was shot at dusk, so it shows
+// as shot only around sunset; by day it is lifted and cooled toward daylight,
+// at dawn it is cool, and at night it is deep blue with stars. Linear in between.
 const DAY = [
   [0, 0.5, 0.58, 0.85, 1],
   [5, 0.55, 0.62, 0.85, 0.9],
-  [6.5, 0.9, 0.93, 1.05, 0],
-  [9, 1, 1, 1, 0],
-  [16, 1, 1, 1, 0],
-  [18, 1.1, 1, 0.86, 0],
+  [6.5, 0.9, 0.95, 1.12, 0],
+  [9, 1.15, 1.27, 1.5, 0],
+  [15.5, 1.15, 1.27, 1.5, 0],
+  [17.5, 1, 1, 1, 0],
   [19.5, 0.85, 0.78, 0.86, 0.25],
   [21, 0.5, 0.58, 0.85, 1],
   [24, 0.5, 0.58, 0.85, 1],
