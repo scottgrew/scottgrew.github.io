@@ -6,7 +6,8 @@
   border: 0;
   background: none;
   color: inherit;
-  cursor: crosshair;
+  /* No pointer change: nothing hints that the drawing does anything. */
+  cursor: default;
 }
 
 .trackerCanvas {
