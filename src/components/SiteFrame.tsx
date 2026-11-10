@@ -10,7 +10,6 @@ import { InfoLine } from "./InfoLine";
 import { NameCloud } from "./NameCloud";
 import { SocialLink } from "./SocialLink";
 import { SiteMark } from "./SiteMark";
-import { SkipConnection } from "./SkipConnection";
 import styles from "./SiteFrame.module.css";
 
 // Once the sky hands off, the name's scan starts this long into the column's
@@ -63,22 +62,15 @@ function Mark({ size, xor = false }: { size: number; xor?: boolean }) {
 }
 
 function HomeColumn({ current }: { current: string }) {
-  const columnRef = useRef<HTMLDivElement>(null);
-  const upperRef = useRef<HTMLDivElement>(null);
-  const lowerRef = useRef<HTMLDivElement>(null);
-  const boxRef = useRef<HTMLDivElement>(null);
-
   return (
-    <div ref={columnRef} className={styles.column}>
-      <SkipConnection column={columnRef} upper={upperRef} lower={lowerRef} box={boxRef} />
-      <div ref={upperRef} className={`${styles.line} ${styles.step} ${styles.s2}`} />
-      <div ref={boxRef} className={`${styles.box} ${styles.step} ${styles.s3}`}>
+    <div className={styles.column}>
+      <div className={`${styles.box} ${styles.step} ${styles.s3}`}>
         <ViewTransition name="site-name">
           <NameCloud text={home.name} className={styles.name} />
         </ViewTransition>
         <p className={styles.subtitle}>{home.subtitle}</p>
       </div>
-      <div ref={lowerRef} className={`${styles.line} ${styles.step} ${styles.s4}`} />
+      <div className={`${styles.line} ${styles.step} ${styles.s4}`} />
       <div className={`${styles.step} ${styles.s5}`}>
         <Nav current={current} compact={false} />
       </div>

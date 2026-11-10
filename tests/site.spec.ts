@@ -19,7 +19,7 @@ async function opacity(page: Page, selector: string) {
   return page.locator(selector).first().evaluate((el) => getComputedStyle(el).opacity);
 }
 
-test("home shows the name, the nav, the skip connection and the live sky", async ({ page }) => {
+test("home shows the name, the nav and the live sky", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const errors = watchErrors(page);
   await page.goto("/");
@@ -28,12 +28,7 @@ test("home shows the name, the nav, the skip connection and the live sky", async
   await page.waitForTimeout(2200);
   expect(await opacity(page, "h1")).toBe("1");
   expect(await opacity(page, "nav[aria-label=Main]")).toBe("1");
-  // The skip connection is a hairline, never a filled shape, and the
-  // frame mark's x axis is drawn in its colour, not the default black.
-  const skip = page.locator("header svg[aria-hidden=true]");
-  await expect(skip.locator("circle")).toHaveCount(1);
-  for (const fill of await skip.locator("path").evaluateAll((els) => els.map((el) => getComputedStyle(el).fill)))
-    expect(fill).toBe("none");
+  // The frame mark's x axis is drawn in its colour, not the default black.
   expect(await page.locator("header svg[role=img] [data-axis=x] path").last().evaluate((el) => getComputedStyle(el).fill)).toBe("rgb(242, 154, 74)");
   await expect(page.locator(".bg-root")).toHaveAttribute("data-renderer", "webgl");
   expect(errors).toEqual([]);
