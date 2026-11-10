@@ -31,8 +31,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 // Static hosting cannot send headers, so the policy rides in a meta tag.
-// 'unsafe-inline' scripts are needed for Next's inline bootstrap; a
-// hash-based policy replaces it before launch.
+// 'unsafe-inline' in script-src is a placeholder: after the build,
+// scripts/csp-hashes.mjs replaces it in every page with the hashes of that
+// page's inline scripts, so only those run.
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",

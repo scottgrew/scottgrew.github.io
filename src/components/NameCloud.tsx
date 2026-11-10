@@ -32,7 +32,7 @@ const alphaStyles = (rgb: string) =>
   Array.from({ length: ALPHA_LEVELS + 1 }, (_, i) => `rgba(${rgb},${(i / ALPHA_LEVELS).toFixed(3)})`);
 const WHITE_STYLES = alphaStyles("255,255,255");
 const WARM_STYLES = alphaStyles("242,154,74");
-const HALO_STYLE = "rgba(10,12,15,0.5)";
+const HALO_STYLE = "rgba(10,12,15,0.3)";
 const IDLE_AFTER_MS = 1200;
 
 // Each point's target is stored as a fraction of the heading's box. A resize
