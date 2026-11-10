@@ -1,3 +1,33 @@
+/* Affiliation lockup: the SC mark, a hairline, and the school in small
+   spaced capitals. */
+.affiliation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  color: var(--text);
+}
+
+.affiliation p {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--hairline);
+}
+
+.affiliation span {
+  font-size: var(--label-size);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.affiliation span + span {
+  color: var(--text-dim);
+}
+
 .links {
   display: flex;
   flex-wrap: wrap;

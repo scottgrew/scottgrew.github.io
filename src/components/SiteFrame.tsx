@@ -7,7 +7,6 @@ import { home, navItems, titleTransition } from "@/content/site";
 import { ConsoleSummary } from "./Eggs";
 import { COLUMN_DONE, NAME_DONE, SKY_RESOLVING, after, introSeen, listenForSkipInput, markIntroSeen, onSkip, signal } from "./intro";
 import { InfoLine } from "./InfoLine";
-import { Shortcuts } from "./Shortcuts";
 import { NameCloud } from "./NameCloud";
 import { SocialLink } from "./SocialLink";
 import { SGMark } from "./SGMark";
@@ -167,7 +166,6 @@ export function SiteFrame({ children }: { children: React.ReactNode }) {
     <>
       <div className={styles.shade} data-view={isHome ? "home" : "page"} aria-hidden="true" />
       <ConsoleSummary />
-      <Shortcuts />
       {isHome ? <InfoLine /> : null}
       <header
         className={`${styles.frame} ${isHome ? styles.homeFrame : styles.barFrame} ${

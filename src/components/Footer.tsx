@@ -20,9 +20,6 @@ export function Footer() {
           </li>
         ))}
       </ul>
-      <p className={styles.keys}>
-        Press <kbd>?</kbd> for keyboard shortcuts
-      </p>
     </footer>
   );
 }

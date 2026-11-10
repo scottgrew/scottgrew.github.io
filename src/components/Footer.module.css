@@ -44,17 +44,3 @@
 .links a:focus-visible {
   color: var(--accent);
 }
-
-.keys {
-  flex-basis: 100%;
-  margin: 0;
-  font-family: var(--font-mono-family);
-  text-transform: none;
-  letter-spacing: 0.04em;
-}
-
-.keys kbd {
-  padding: 0 0.35em;
-  border: 1px solid var(--hairline);
-  font-family: inherit;
-}

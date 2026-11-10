@@ -138,16 +138,6 @@ test("unknown pages are out of distribution", async ({ page }) => {
   await expect(page.getByText("this page")).toBeVisible();
 });
 
-test("keyboard shortcuts open pages, go home, and list themselves", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForTimeout(800);
-  await page.keyboard.press("2");
-  await expect(page.getByRole("heading", { level: 1, name: "MotionNet" })).toBeVisible();
-  await page.keyboard.press("?");
-  await expect(page.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("heading", { level: 1, name: "Scott Grew" })).toBeVisible();
-});
 
 test("the CV page offers the site resume, which carries no contact details", async ({ page, request }) => {
   await page.goto("/cv/");
