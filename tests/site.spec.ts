@@ -216,8 +216,11 @@ test("the point-cloud name never shows an empty canvas while the window resizes"
 
 test("the Throughline radar starts tracking the cursor", async ({ page }) => {
   await page.goto("/throughline/");
-  await page.locator("[data-egg-trigger=tracker]").click();
-  await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(1);
+  // A click before the page has hydrated does nothing; another click starts it.
+  await expect(async () => {
+    await page.locator("[data-egg-trigger=tracker]").click();
+    await expect(page.locator("canvas[data-egg=tracker]")).toHaveCount(1, { timeout: 500 });
+  }).toPass();
   // A click in the instant the egg appears can be missed; another click stops it.
   await expect(async () => {
     await page.mouse.click(40, 40);
@@ -228,8 +231,11 @@ test("the Throughline radar starts tracking the cursor", async ({ page }) => {
 
 test("the MotionNet paths give the cursor six futures until the next click", async ({ page }) => {
   await page.goto("/motionnet/");
-  await page.locator("[data-egg-trigger=futures]").click();
-  await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(1);
+  // A click before the page has hydrated does nothing; another click starts it.
+  await expect(async () => {
+    await page.locator("[data-egg-trigger=futures]").click();
+    await expect(page.locator("canvas[data-egg=futures]")).toHaveCount(1, { timeout: 500 });
+  }).toPass();
   // A click in the instant the egg appears can be missed; another click stops it.
   await expect(async () => {
     await page.mouse.click(40, 40);
@@ -237,9 +243,11 @@ test("the MotionNet paths give the cursor six futures until the next click", asy
   }).toPass();
 });
 
-test("the Throughline demo is a looping video that loads", async ({ page }) => {
-  await page.goto("/throughline/");
-  const video = page.locator("figure video");
-  await expect(video).toHaveAttribute("loop", "");
-  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
+test("the Throughline and MotionNet demos are looping videos that load", async ({ page }) => {
+  for (const slug of ["throughline", "motionnet"]) {
+    await page.goto(`/${slug}/`);
+    const video = page.locator("figure video");
+    await expect(video).toHaveAttribute("loop", "");
+    await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
+  }
 });

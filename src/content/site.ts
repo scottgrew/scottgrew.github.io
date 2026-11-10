@@ -65,6 +65,13 @@ export const projects: Project[] = [
   {
     slug: "motionnet",
     title: "MotionNet",
+    demo: {
+      src: "/media/motionnet.mp4",
+      width: 836,
+      height: 636,
+      label: "A busy intersection from above, with orange paths curving ahead of the cars MotionNet is predicting",
+      caption: "Orange boxes are the cars MotionNet is predicting, and the orange lines are its possible paths for each. The white box is the self-driving car.",
+    },
     body: [
       "MotionNet watches one second of a real street scene and predicts where every car, cyclist and pedestrian will be over the next eight seconds.",
       "A car at a junction might turn or go straight, and averaging the two gives a path through the curb. So instead of one guess, it gives six possible paths and how likely each one is.",
