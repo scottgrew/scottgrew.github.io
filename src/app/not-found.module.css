@@ -59,10 +59,3 @@
   border-color: var(--accent);
   color: var(--accent);
 }
-
-.hume {
-  margin: var(--space-2) 0 0;
-  font-family: var(--font-mono-family);
-  font-size: 0.75rem;
-  color: var(--text-dim);
-}

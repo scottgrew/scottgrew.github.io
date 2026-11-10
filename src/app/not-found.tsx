@@ -26,8 +26,6 @@ export default function NotFound() {
           </div>
         ))}
       </figure>
-      {/* Philosophy egg: an unknown input is Hume's problem of induction. */}
-      <p className={styles.hume}>Nothing in training says the next URL will look like the last ones. That is Hume&apos;s problem of induction.</p>
       <Link href="/" className={styles.home}>
         Back to home
       </Link>

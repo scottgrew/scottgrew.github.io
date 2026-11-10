@@ -10,18 +10,14 @@ import styles from "./eggs.module.css";
 // is confirmed after 3 hits, and it draws its 2σ uncertainty ellipse and a
 // 0.6 s forecast. ClickEgg starts and stops it.
 //
-// Two philosophy eggs ride on it. Zeno: once the cursor stops, the box closes
-// the same fraction of the remaining gap every frame, so it gets ever closer
-// and never arrives; the label counts the distance left. The track lives 2 s
-// after the cursor stops (the tracker itself drops a track after 5 missed
-// scans) so there is time to read it. Theseus: after THESEUS_HITS scans, every
-// detection the track started from has been replaced, and it is still the
-// same ID.
+// Once the cursor stops, the box closes the same fraction of the remaining
+// gap every frame, so it gets ever closer and never arrives (Zeno); the label
+// counts the distance left. The track lives 2 s after the cursor stops (the
+// tracker itself drops a track after 5 missed scans) so there is time to see it.
 
 const SCAN_S = 0.1;
 const HITS_TO_CONFIRM = 3;
 const MISSES_TO_DELETE = 20;
-const THESEUS_HITS = 30; // 3 s of continuous tracking
 const FORECAST_S = 0.6;
 const FOLLOW_S = 0.15; // the box lags a steady cursor by about speed × FOLLOW_S
 const MISSES_TENTATIVE = 2; // a new track survives one quiet scan
@@ -136,17 +132,11 @@ export function TrackerOverlay({ onDone }: { onDone: () => void }) {
       context.restore();
       context.font = "11px ui-monospace, monospace";
       const gap = Math.hypot(tx - x, ty - y);
-      const state = track.hits < HITS_TO_CONFIRM ? "tentative" : still ? `Zeno · ${gap.toPrecision(2)} px to go` : `${Math.round(v)} px/s`;
-      const lines = [`ID ${track.id} · ${state}`];
-      if (track.hits >= THESEUS_HITS) lines.push(`every part replaced, still ID ${track.id}`);
-      // Labels sit right of the box, or left of it when they would run off-screen.
-      const width = Math.max(...lines.map((line) => context.measureText(line).width));
-      const left = x + 16 + width > window.innerWidth ? x - 16 - width : x + 16;
-      lines.forEach((line, i) => {
-        context.globalAlpha = i ? 0.6 : 1;
-        context.fillText(line, left, y - 12 + i * 14);
-      });
-      context.globalAlpha = 1;
+      const state = track.hits < HITS_TO_CONFIRM ? "tentative" : still ? `${gap.toPrecision(2)} px to go` : `${Math.round(v)} px/s`;
+      // The label sits right of the box, or left of it when it would run off-screen.
+      const label = `ID ${track.id} · ${state}`;
+      const width = context.measureText(label).width;
+      context.fillText(label, x + 16 + width > window.innerWidth ? x - 16 - width : x + 16, y - 12);
     };
 
     const loop = (now: number) => {

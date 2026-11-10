@@ -12,10 +12,9 @@ import styles from "./eggs.module.css";
 // how well it fits the motion, and the likeliest is drawn solid.
 // This illustrates MotionNet's output; it is not the model.
 //
-// Philosophy egg: hold the cursor still and all six futures coincide, since
-// every mode predicts the same place for something that is not moving. One
-// certain future is what Laplace's demon, which knows every position and
-// velocity, would see.
+// Hold the cursor still and all six futures coincide, since every mode
+// predicts the same place for something that is not moving (Laplace's one
+// certain future).
 
 const SCAN_S = 0.05;
 const HORIZON_S = 1;
@@ -108,7 +107,7 @@ export function FuturesOverlay({ onDone }: { onDone: () => void }) {
         context.fillStyle = "#f29a4a";
         context.fillRect(cursor[0] - 2, cursor[1] - 2, 4, 4);
         context.font = "11px ui-monospace, monospace";
-        const label = "6 futures, all the same · Laplace's demon";
+        const label = "1 future";
         const width = context.measureText(label).width;
         context.fillText(label, cursor[0] + 14 + width > window.innerWidth ? cursor[0] - 14 - width : cursor[0] + 14, cursor[1] - 12);
         return;
