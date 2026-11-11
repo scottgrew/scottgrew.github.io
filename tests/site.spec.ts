@@ -88,12 +88,27 @@ test("previous and next walk through the projects", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Next →/ })).toHaveCount(0);
 });
 
+const PROJECT_PAGES = ["/throughline/", "/motionnet/", "/showdown/"];
+
 for (const path of PAGES.slice(1)) {
-  test(`${path} loads directly, readable, with no README dump`, async ({ page }) => {
+  const isProject = PROJECT_PAGES.includes(path);
+  test(`${path} loads directly and readably`, async ({ page }) => {
     const errors = watchErrors(page);
     await page.goto(path);
     await expect(page.locator("h1")).toBeVisible();
-    await expect(page.locator("table, code, pre")).toHaveCount(0);
+    if (isProject) {
+      // Project pages carry the README minus build steps: results table, a
+      // diagram that loads, and no build commands.
+      await expect(page.getByRole("heading", { level: 2, name: "Results" })).toBeVisible();
+      await expect(page.locator("table").first()).toBeVisible();
+      const diagram = page.locator(`img[src="/media/diagrams/${path.slice(1, -1)}.svg"]`);
+      await expect(diagram).toBeVisible();
+      expect(await diagram.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+      await expect(page.locator("pre")).toHaveCount(0);
+      await expect(page.getByRole("heading", { name: /^(Build|Usage)/ })).toHaveCount(0);
+    } else {
+      await expect(page.locator("table, code, pre")).toHaveCount(0);
+    }
     expect(errors).toEqual([]);
   });
 }

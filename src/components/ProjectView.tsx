@@ -1,10 +1,12 @@
 import Link from "next/link";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { projects, type Project } from "@/content/site";
 import { Page } from "./Page";
 import { ProjectMotif } from "./ProjectMotif";
 import styles from "./ProjectView.module.css";
 
-export function ProjectView({ project }: { project: Project }) {
+export function ProjectView({ project, readme }: { project: Project; readme: string }) {
   const index = projects.findIndex((p) => p.slug === project.slug);
   const previous = projects[index - 1];
   const next = projects[index + 1];
@@ -28,9 +30,9 @@ export function ProjectView({ project }: { project: Project }) {
         </figure>
       ) : null}
 
-      {project.body.map((paragraph) => (
-        <p key={paragraph}>{paragraph}</p>
-      ))}
+      <div className={styles.readme}>
+        <Markdown remarkPlugins={[remarkGfm]}>{readme}</Markdown>
+      </div>
 
       <a className={styles.code} href={project.code} rel="noopener noreferrer" target="_blank">
         GitHub ↗

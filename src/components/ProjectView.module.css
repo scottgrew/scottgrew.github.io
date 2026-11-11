@@ -97,3 +97,75 @@
 .pagerLink:focus-visible .pagerHint {
   color: var(--accent);
 }
+
+/* The project's README, rendered from Markdown. */
+.readme h2 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-family: var(--font-display-family);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: var(--display-track);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.readme ul,
+.readme ol {
+  margin: 0 0 var(--space-3);
+  padding-left: 1.25rem;
+  font-size: var(--body-size);
+  line-height: 1.75;
+  color: var(--text-body);
+}
+
+.readme li + li {
+  margin-top: var(--space-1);
+}
+
+.readme li p {
+  margin: 0;
+}
+
+.readme a {
+  color: var(--text);
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+.readme code {
+  font-family: var(--font-mono-family);
+  font-size: 0.88em;
+}
+
+.readme table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0 0 var(--space-3);
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-body);
+  text-shadow: none;
+}
+
+.readme th,
+.readme td {
+  padding: 0.45rem 0.9rem 0.45rem 0;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.readme th {
+  color: var(--text);
+  font-weight: 600;
+  border-bottom-color: var(--rule);
+}
+
+.readme img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto var(--space-3);
+}
