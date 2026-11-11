@@ -1,6 +1,5 @@
 A C++20 program that learns a strategy for Rhode Island Hold'em, a two-player
-poker game used in research, and scores it against the strategy Gilpin and
-Sandholm published in 2007.
+poker game used in research, and scores it against a published strategy.
 
 ## Results
 
