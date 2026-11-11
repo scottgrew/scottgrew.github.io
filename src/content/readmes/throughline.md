@@ -14,8 +14,9 @@ published detections. Boxes under 0.5 confidence are dropped, or under 0.7 for p
 | crawling through a junction | 0.54 | 0.57   |
 | slow turn, 21 km/h          | 0.72 | 0.34   |
 
-Most of the errors on the fast road are distant cars the detector missed. A frame takes 3 to
-4 ms at the median and about 7 ms at the 99th percentile, against 100 ms between scans.
+Most of the errors on the fast road are distant cars the detector missed. Across the three
+clips a frame takes 3 to 5 ms at the median and under 12 ms at the 99th percentile, against
+100 ms between scans.
 
 ## How it works
 

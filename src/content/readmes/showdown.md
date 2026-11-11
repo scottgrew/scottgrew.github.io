@@ -8,8 +8,10 @@ perfect):
 
 | Strategy | Exploitability |
 |---|---|
-| Gilpin and Sandholm | 0.805 |
+| Published equilibrium | 0.805 |
 | This project | 0.094 ± 0.001 |
+
+Both numbers come from the same best response.
 
 Averaged over 5 seeds, each about 5½ minutes of training (409.6M iterations)
 on a 16-thread laptop. Training runs 10× faster on 16 threads than on one.
@@ -21,9 +23,9 @@ The game reproduces the paper's sizes exactly: 6,632,705 deal nodes and
 
 ![Diagram of how showdown fits together](/media/diagrams/showdown.svg)
 
-- **Card grouping** merges hands that play identically. The authors' released
-  grouping also merges some hands that play differently in the full game, so
-  training uses a finer one.
+- **Card grouping** merges hands that play identically. Training uses a finer
+  grouping than the authors' released one, which may merge some hands that
+  play differently in the full game.
 - **Training** is Monte Carlo CFR: self-play that shifts toward actions it
   regrets not taking, on lock-free shared tables.
 - **Best response** finds the strongest counter-strategy exactly, in one pass.
