@@ -1,17 +1,13 @@
-A Python program that predicts where cars, cyclists and pedestrians
-will move next, from recorded autonomous-driving data.
-
-A Waymo car records the scene around it: where each road user has been
-for the past second, the lane lines, the state of the traffic lights.
-From that one second, this program predicts the next eight: six
-possible paths per road user, each with a confidence. A car approaching
-a junction may turn or continue straight, and a single prediction would
-average the two.
+Motion prediction for the Waymo Open Motion Dataset, in Python and PyTorch. From one second of
+a road user's history, the traffic around it, the lane geometry and the traffic-light states,
+it predicts six possible paths for the next eight seconds, each with a confidence. A car
+approaching a junction may turn or continue straight, and a single prediction would average
+the two.
 
 ## Results
 
-minADE: the mean distance, in metres, between the recorded path and the
-closest of the six predictions. Lower is better.
+minADE is the mean distance, in metres, between the recorded path and the closest of the six
+predictions. Lower is better.
 
 | minADE (m)                | 3 s  | 5 s  | 8 s   |
 |---------------------------|------|------|-------|
@@ -25,27 +21,30 @@ closest of the six predictions. Lower is better.
 | cyclists, test            | 0.37 | 0.71 | 1.28  |
 | cyclists, control         | 1.14 | 2.26 | 4.17  |
 
-Validation: 44,097 scenes. Test: 44,920 scenes. Both graded by Waymo's
-evaluation server. Control: constant speed and heading, scored by
-Waymo's metric code on the validation scenes. Model: 12M parameters.
+Soft mAP, the metric Waymo ranks this challenge by, averaged over every object type and
+horizon: 0.357 on validation, 0.353 on test.
 
-## Method
+Validation (44,097 scenes) and test (44,920 scenes) were graded by Waymo's evaluation server.
+The control assumes constant speed and heading, scored with Waymo's metric code on the
+validation scenes. The model has 12M parameters and was trained for 20 epochs on 122,352
+scenes, a quarter of the training split.
 
-1. Waymo's files are read with TensorFlow's record reader and reduced
-   to numeric arrays, one file per scene.
-2. Before training, the endpoints of the training paths are clustered
-   into 54 typical destinations per road-user type: straight and far,
-   gentle left, hard right. These are the anchors.
-3. A transformer encodes the scene and, for each anchor, adjusts that
-   anchor's path to fit it. A second head scores how likely each anchor
-   is. In the loss, each training example trains the path of the anchor
-   closest to the recorded path, and trains the confidence toward that
-   same anchor.
-4. At prediction time the 54 are ranked by confidence, near-duplicates
-   are dropped, and the six highest are kept.
-5. The whole path from a scene to its six kept paths exports as one
-   ONNX graph, checked against PyTorch.
+## How it works
 
-## Architecture
+1. Before training, the endpoints of the training paths are clustered with k-means into 54
+   typical destinations per object type: straight and far, gentle left, hard right. These are
+   the anchors.
+2. Each road user being predicted is seen in its own frame, with its history, the 48 other
+   agents and 256 map chunks nearest the straight path it would cover in 8 s, and the
+   traffic-light states.
+3. A 6-layer transformer encoder reads the scene. A 6-round transformer decoder starts one
+   query from each anchor and adjusts that anchor's path, and a second head scores how likely
+   each anchor is.
+4. Training uses a Gaussian likelihood on one anchor's path plus cross-entropy on the
+   confidences. The anchor trained is the one whose constant-speed straight path lies closest
+   to the recorded path.
+5. At prediction time the 54 paths are ranked by confidence, near-duplicates are dropped, and
+   the top six are kept. The whole model also exports to one ONNX graph, checked against
+   PyTorch.
 
 ![Diagram of how motionnet fits together](/media/diagrams/motionnet.svg)
