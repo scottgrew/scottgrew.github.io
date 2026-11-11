@@ -28,32 +28,23 @@ closest of the six predictions. Lower is better.
 Validation: 44,097 scenes. Test: 44,920 scenes. Both graded by Waymo's
 evaluation server. Control: constant speed and heading, scored by
 Waymo's metric code on the validation scenes. Model: 12M parameters.
-Training: a quarter of the training split, 122,352 scenes, 20 epochs,
-two sessions on a free Kaggle GPU. Not comparable to the public
-leaderboard.
 
 ## Method
 
 1. Waymo's files are read with TensorFlow's record reader and reduced
-   to numeric arrays, one file per scene. (`stage.py`,
-   `womd/store.py`)
+   to numeric arrays, one file per scene.
 2. Before training, the endpoints of the training paths are clustered
    into 54 typical destinations per road-user type: straight and far,
-   gentle left, hard right. These are the anchors. (`fit_anchors.py`)
+   gentle left, hard right. These are the anchors.
 3. A transformer encodes the scene and, for each anchor, adjusts that
    anchor's path to fit it. A second head scores how likely each anchor
    is. In the loss, each training example trains the path of the anchor
    closest to the recorded path, and trains the confidence toward that
    same anchor.
-   (`womd/model.py`, `womd/loss.py`, `train.py`)
 4. At prediction time the 54 are ranked by confidence, near-duplicates
-   are dropped, and the six highest are kept. (`womd/pruning.py`,
-   `submit.py`)
+   are dropped, and the six highest are kept.
 5. The whole path from a scene to its six kept paths exports as one
-   ONNX graph, checked against PyTorch. (`export_onnx.py`)
-
-The exact inputs the model reads are drawn, column by column, at the
-bottom of `womd/layout.py`.
+   ONNX graph, checked against PyTorch.
 
 ## Architecture
 
