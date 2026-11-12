@@ -18,7 +18,7 @@ Most of the errors on the fast road are distant cars the detector missed. Across
 clips a frame takes 3 to 5 ms at the median and under 12 ms at the 99th percentile, against
 100 ms between scans.
 
-## How it works
+## Method
 
 Each track runs an extended Kalman filter over position, heading, speed and turn rate. New
 boxes are matched to predicted tracks with the Hungarian algorithm, and pairs that are too far
