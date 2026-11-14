@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const PAGES = ["/", "/throughline/", "/motionnet/", "/showdown/", "/about/", "/cv/", "/contact/"];
+const PAGES = ["/", "/throughline/", "/motionnet/", "/about/", "/cv/", "/contact/"];
 const WIDTHS = [375, 768, 1280, 1920];
 const SHOTS = process.env.SHOT_DIR;
 
@@ -83,12 +83,10 @@ test("previous and next walk through the projects", async ({ page }) => {
   await page.goto("/throughline/");
   await page.getByRole("link", { name: /Next → MotionNet/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "MotionNet" })).toBeVisible();
-  await page.getByRole("link", { name: /Next → Showdown/ }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Showdown" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Next →/ })).toHaveCount(0);
 });
 
-const PROJECT_PAGES = ["/throughline/", "/motionnet/", "/showdown/"];
+const PROJECT_PAGES = ["/throughline/", "/motionnet/"];
 
 for (const path of PAGES.slice(1)) {
   const isProject = PROJECT_PAGES.includes(path);
@@ -159,7 +157,7 @@ test("the CV page offers the site resume, which carries no contact details", asy
 });
 
 test("project pages end with the footer", async ({ page }) => {
-  await page.goto("/showdown/");
+  await page.goto("/motionnet/");
   await expect(page.locator("main footer")).toContainText("Updated");
 });
 

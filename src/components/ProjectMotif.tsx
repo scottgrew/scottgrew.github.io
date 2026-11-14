@@ -4,8 +4,7 @@ import { TrackerOverlay } from "./eggs/CursorTracker";
 import styles from "./ProjectMotif.module.css";
 
 // Each project page carries a small drawing of its own idea next to the
-// title: Throughline's lidar sweep, MotionNet's six predicted paths, and
-// Showdown's game tree with the chosen line lit.
+// title: Throughline's lidar sweep and MotionNet's six predicted paths.
 
 function LidarSweep() {
   const rings = [22, 44, 66, 88, 110];
@@ -62,47 +61,8 @@ function PathFan() {
   );
 }
 
-function GameTree() {
-  // Root, then fold / call / raise, then a second decision under call and raise.
-  const root = { x: 120, y: 14 };
-  const actions = [
-    { x: 40, y: 72 },
-    { x: 120, y: 72 },
-    { x: 200, y: 72 },
-  ];
-  const leaves = [
-    { from: 1, x: 95 }, { from: 1, x: 145 },
-    { from: 2, x: 170 }, { from: 2, x: 200 }, { from: 2, x: 230 },
-  ];
-  const chosen = { action: 2, leaf: 3 };
-  return (
-    <svg viewBox="0 0 240 150" className={styles.motif} aria-hidden="true" data-motif="tree">
-      {actions.map((a, i) => (
-        <line key={i} x1={root.x} y1={root.y} x2={a.x} y2={a.y} className={i === chosen.action ? styles.accent : styles.faint} />
-      ))}
-      {leaves.map((leaf, i) => (
-        <line
-          key={i}
-          x1={actions[leaf.from].x}
-          y1={actions[leaf.from].y}
-          x2={leaf.x}
-          y2={130}
-          className={i === chosen.leaf ? styles.accent : styles.faint}
-        />
-      ))}
-      {[root, ...actions].map((n, i) => (
-        <circle key={i} cx={n.x} cy={n.y} r={3} className={styles.node} />
-      ))}
-      {leaves.map((leaf, i) => (
-        <circle key={i} cx={leaf.x} cy={130} r={2.2} className={i === chosen.leaf ? styles.dot : styles.node} />
-      ))}
-    </svg>
-  );
-}
-
 export function ProjectMotif({ slug }: { slug: string }) {
   if (slug === "throughline") return <ClickEgg name="tracker" overlay={TrackerOverlay}><LidarSweep /></ClickEgg>;
   if (slug === "motionnet") return <ClickEgg name="futures" overlay={FuturesOverlay}><PathFan /></ClickEgg>;
-  if (slug === "showdown") return <GameTree />;
   return null;
 }

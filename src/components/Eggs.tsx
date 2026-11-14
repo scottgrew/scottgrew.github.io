@@ -6,7 +6,6 @@ import { useEffect } from "react";
 const SUMMARY = `Portfolio(
   (0): Throughline(lidar boxes → tracks, 2–4 ms per frame)
   (1): MotionNet(1 s of history → 6 paths × 8 s)
-  (2): Showdown(self-play → 0.094 chips per hand exploitable)
 )
 try ↑ ↑ ↓ ↓ ← → ← → B A`;
 

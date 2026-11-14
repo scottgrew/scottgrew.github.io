@@ -3,11 +3,10 @@ import { Page } from "@/components/Page";
 import styles from "./not-found.module.css";
 
 // The classifier's verdict on an unknown URL: a softmax over the pages that
-// exist, which leaves almost nothing for this one. The four values sum to 1.
+// exist, which leaves almost nothing for this one. The three values sum to 1.
 const DISTRIBUTION = [
-  { label: "/throughline", p: 0.412 },
-  { label: "/motionnet", p: 0.331 },
-  { label: "/showdown", p: 0.254 },
+  { label: "/throughline", p: 0.553 },
+  { label: "/motionnet", p: 0.444 },
   { label: "this page", p: 0.003 },
 ];
 

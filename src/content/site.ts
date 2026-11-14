@@ -71,12 +71,6 @@ export const projects: Project[] = [
     summary: "MotionNet watches one second of a real street scene and predicts where every car, cyclist and pedestrian will be over the next eight seconds.",
     code: `${github}/MotionNet-avPrediction`,
   },
-  {
-    slug: "showdown",
-    title: "Showdown",
-    summary: "Showdown taught itself a small two-player poker game that AI researchers use as a test, by playing against itself hundreds of millions of times.",
-    code: `${github}/Showdown-Rhode-Island-Solver`,
-  },
 ];
 
 export function getProject(slug: string): Project | undefined {
