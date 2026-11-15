@@ -20,8 +20,10 @@ export function SiteMark({ size, xor = false }: { size: number; xor?: boolean })
       aria-label="Scott Grew"
       className={xor ? styles.xor : undefined}
     >
-      <circle cx="44" cy="44" r="43.5" fill="none" stroke="currentColor" strokeWidth="1" />
-      <path d="M 74.8 13.3 A 43.5 43.5 0 0 1 87.5 44" fill="none" stroke="var(--accent)" strokeWidth="2" />
+      {/* Ring and arc share r=42 so the arc sits on the ring, inset enough
+          that neither stroke is clipped by the viewBox at small sizes. */}
+      <circle cx="44" cy="44" r="42" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M 73.7 14.3 A 42 42 0 0 1 86 44" fill="none" stroke="var(--accent)" strokeWidth="3" />
       <g className={styles.symbol} data-part="tetrahedron">
         <path d={TETRAHEDRON.edges} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d={TETRAHEDRON.hidden} fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
