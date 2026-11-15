@@ -1,7 +1,6 @@
 import { Page } from "@/components/Page";
-import { SocialLink } from "@/components/SocialLink";
 import { USCMark } from "@/components/USCMark";
-import { about, home } from "@/content/site";
+import { about } from "@/content/site";
 import { buildMetadata } from "@/lib/metadata";
 import styles from "./about.module.css";
 
@@ -33,13 +32,6 @@ export default function AboutPage() {
       {about.body.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}
-      <ul className={styles.links}>
-        {home.links.map((link) => (
-          <li key={link.href}>
-            <SocialLink link={link} arrow />
-          </li>
-        ))}
-      </ul>
     </Page>
   );
 }
