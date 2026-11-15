@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" role="img" aria-label="Scott Grew">
-  <rect width="88" height="88" fill="#1b1f22"/>
-  <circle cx="44" cy="44" r="42" fill="none" stroke="#ffffff" stroke-width="3"/>
-  <text x="44" y="46" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-family="system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="3">SG</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88"><path d="M 44 4 L 6 72 L 51 86 Z" fill="#ffffff"/><path d="M 44 4 L 51 86 L 83 70 Z" fill="#f29a4a"/><path d="M 44 4 L 6 72 L 51 86 L 83 70 Z M 44 4 L 51 86" fill="none" stroke="#1b1f22" stroke-width="3" stroke-linejoin="round"/></svg>
