@@ -1,3 +1,25 @@
+/* Portrait: kept small and inert. No link, no drag, no long-press preview,
+   so it can't be opened larger than it's shown. */
+.portrait {
+  display: block;
+  width: 128px;
+  height: 128px;
+  margin-bottom: var(--space-3);
+  object-fit: cover;
+  border: 1px solid var(--hairline);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media (max-width: 600px) {
+  .portrait {
+    width: 104px;
+    height: 104px;
+  }
+}
+
 /* Affiliation lockup: the SC mark, a hairline, and the school in small
    spaced capitals. */
 .affiliation {

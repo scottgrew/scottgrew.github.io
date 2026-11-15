@@ -10,6 +10,17 @@ export const metadata = buildMetadata(about.title, about.body[0], "/about/");
 export default function AboutPage() {
   return (
     <Page title={about.title} transitionName="title-about">
+      {/* Static export: images are unoptimized, and the file is pre-sized to 256px. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className={styles.portrait}
+        src={about.portrait.src}
+        alt={about.portrait.alt}
+        width={128}
+        height={128}
+        draggable={false}
+        decoding="async"
+      />
       <div className={styles.affiliation}>
         <USCMark height={52} />
         <p>
