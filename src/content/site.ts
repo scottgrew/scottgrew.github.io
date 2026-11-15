@@ -42,7 +42,7 @@ export const about = {
   // Exported at 256px on purpose: shown small, never enlargeable.
   portrait: { src: "/media/headshot.jpg", alt: "Scott Grew" },
   body: [
-    "I'm Scott, a master's student in computer science at USC. I'm most interested in where machine learning meets robotics and control: perception, state estimation, planning, and learning-based control for machines that operate in the real world.",
+    "I'm Scott, a master's student in computer science at USC. I'm most interested in where machine learning meets robotics and control. Right now that means perception, state estimation, planning, and learning-based control for machines that operate in the real world.",
     "When I'm not at a keyboard, I'm usually in the mountains.",
   ],
 };
