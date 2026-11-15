@@ -98,12 +98,11 @@ for (const path of PAGES.slice(1)) {
     await expect(page.locator("h1")).toBeVisible();
     if (isProject) {
       // Project pages carry the README minus build steps: results table, a
-      // diagram that loads, and no build commands.
+      // diagram drawn inline (not the exported image), and no build commands.
       await expect(page.getByRole("heading", { level: 2, name: "Results" })).toBeVisible();
       await expect(page.locator("table").first()).toBeVisible();
-      const diagram = page.locator(`img[src="/media/diagrams/${path.slice(1, -1)}.svg"]`);
-      await expect(diagram).toBeVisible();
-      expect(await diagram.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+      await expect(page.locator("svg[role=img][aria-label^='Diagram of how']")).toBeVisible();
+      await expect(page.locator("img[src^='/media/diagrams/']")).toHaveCount(0);
       await expect(page.locator("pre")).toHaveCount(0);
       await expect(page.getByRole("heading", { name: /^(Build|Usage)/ })).toHaveCount(0);
     } else {
