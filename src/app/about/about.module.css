@@ -1,10 +1,21 @@
+/* Intro row: the round portrait beside the affiliation lockup. Wraps onto
+   two rows when the column is too narrow for both. */
+.intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
 /* Portrait: kept small and inert. No link, no drag, no long-press preview,
    so it can't be opened larger than it's shown. */
 .portrait {
   display: block;
-  width: 128px;
-  height: 128px;
-  margin-bottom: var(--space-3);
+  flex: none;
+  width: 144px;
+  height: 144px;
+  border-radius: 50%;
   object-fit: cover;
   border: 1px solid var(--hairline);
   pointer-events: none;
@@ -15,8 +26,8 @@
 
 @media (max-width: 600px) {
   .portrait {
-    width: 104px;
-    height: 104px;
+    width: 112px;
+    height: 112px;
   }
 }
 
@@ -26,7 +37,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
   color: var(--text);
 }
 
