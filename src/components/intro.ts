@@ -1,7 +1,6 @@
-// The home page opens with overlapping hand-offs: the sky resolves from
-// coarse blocks (0 to 1 s); the column builds from about 0.6 s while it
-// sharpens; the name's scan starts about 0.35 s later, once its box is
-// there, and the name is resolved by about 2.2 s. The contours and the
+// The home page opens with overlapping hand-offs: the sky appears sharp and
+// the column builds as soon as it is ready; the name's scan starts about
+// 0.35 s later, once its box is there, and resolves the name. The contours and the
 // descent path are static parts of the landscape. Steps signal each other
 // through window events, with a flag left behind so a late listener still
 // hears them. Any input skips to the finished state, and the opening plays

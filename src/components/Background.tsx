@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SKY_RESOLVING, introSeen, onSkip, signal } from "./intro";
+import { SKY_RESOLVING, signal } from "./intro";
 import { BAKE_SHADER, RIDGE, SKY_SHADER, VERTEX_SHADER } from "./skyShader";
 import { descendMountain, packRidge } from "./terrain";
 import styles from "./Background.module.css";
@@ -13,12 +13,10 @@ const KONAMI = [
   "arrowleft", "arrowright", "arrowleft", "arrowright", "b", "a",
 ];
 
-// Opening: the sky resolves from coarse "max-pooled" blocks to the sharp
-// image, one block size every STEP_MS; at HAND_OFF_STEP (about 0.6 s) the
-// column starts building. The Konami feature map replays the same resolve.
+// The sky opens sharp. Turning on the Konami feature map resolves it from
+// coarse "max-pooled" blocks, one block size every STEP_MS.
 const POOL_BLOCKS = [64, 48, 32, 16, 8, 4, 2, 1];
 const STEP_MS = 125;
-const HAND_OFF_STEP = 5;
 
 // Speed. The clouds move slowly, so the sky is drawn at most 30 times a
 // second, and 15 behind the darkened project pages. It renders at CSS-pixel
@@ -169,12 +167,7 @@ export function Background() {
     const params = new URLSearchParams(window.location.search);
     if (params.has("perf")) window.setTimeout(() => setShowPerf(true), 0);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let finished = reducedMotion || introSeen();
-    let poolStep = finished ? POOL_BLOCKS.length - 1 : 0;
-    const stopSkip = onSkip(() => {
-      finished = true;
-      poolStep = POOL_BLOCKS.length - 1;
-    });
+    let poolStep = POOL_BLOCKS.length - 1;
 
     let ready = false;
     let disposed = false;
@@ -269,16 +262,14 @@ export function Background() {
       resizeFrame = requestAnimationFrame(redraw);
     };
 
-    // The pooled resolve: coarse squares down to the sharp image. On the
-    // opening it hands off to the column part-way through.
-    const pool = (handOff: boolean) => {
+    // The pooled resolve: coarse squares down to the sharp image.
+    const pool = () => {
       if (reducedMotion) return;
       window.clearTimeout(poolTimer); // a new resolve replaces one in progress
       poolStep = 0;
       const advance = () => {
         if (disposed || poolStep >= POOL_BLOCKS.length - 1) return;
         poolStep += 1;
-        if (handOff && poolStep === HAND_OFF_STEP) signal(SKY_RESOLVING);
         poolTimer = window.setTimeout(advance, STEP_MS);
       };
       poolTimer = window.setTimeout(advance, STEP_MS);
@@ -340,8 +331,7 @@ export function Background() {
       setRenderer("webgl");
       if (reducedMotion) render(performance.now());
       else frame = requestAnimationFrame(loop);
-      if (finished) signal(SKY_RESOLVING);
-      else pool(true);
+      signal(SKY_RESOLVING);
     };
     image.onerror = fallBack;
     image.src = IMAGE_SRC;
@@ -371,7 +361,7 @@ export function Background() {
       featureRef.current = !featureRef.current;
       setFeature(featureRef.current);
       redraw();
-      if (featureRef.current) pool(false);
+      if (featureRef.current) pool();
     };
 
     window.addEventListener("resize", onResize);
@@ -381,7 +371,6 @@ export function Background() {
       cancelAnimationFrame(frame);
       cancelAnimationFrame(resizeFrame);
       window.clearTimeout(poolTimer);
-      stopSkip();
       window.clearInterval(clock);
       canvas.removeEventListener("webglcontextlost", onContextLost);
       window.removeEventListener("resize", onResize);
