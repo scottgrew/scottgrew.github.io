@@ -24,13 +24,15 @@ test("home shows the name, the nav and the live sky", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Scott Grew" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(5);
+  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(4);
   await page.waitForTimeout(2200);
   expect(await opacity(page, "h1")).toBe("1");
   expect(await opacity(page, "nav[aria-label=Main]")).toBe("1");
-  // The tetrahedron mark is drawn in white, not the browser's default black.
-  expect(await page.locator("header svg[role=img] [data-part=tetrahedron] path").first().evaluate((el) => getComputedStyle(el).stroke)).toBe("rgb(255, 255, 255)");
   await expect(page.locator(".bg-root")).toHaveAttribute("data-renderer", "webgl");
+  // Home has no mark; on an inner page the tetrahedron is drawn in white,
+  // not the browser's default black.
+  await page.goto("/about/");
+  expect(await page.locator("header svg[role=img] [data-part=tetrahedron] path").first().evaluate((el) => getComputedStyle(el).stroke)).toBe("rgb(255, 255, 255)");
   expect(errors).toEqual([]);
 });
 
