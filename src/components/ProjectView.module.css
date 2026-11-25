@@ -157,6 +157,12 @@
   white-space: nowrap;
 }
 
+/* A last column of prose (a scenario's description) wraps; number columns
+   stay on one line. */
+.readme td:last-child {
+  white-space: normal;
+}
+
 .readme th {
   color: var(--text);
   font-weight: 600;

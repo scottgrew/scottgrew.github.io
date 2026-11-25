@@ -74,6 +74,18 @@ export const projects: Project[] = [
     summary: "MotionNet watches one second of a real street scene and predicts where every car, cyclist and pedestrian will be over the next eight seconds.",
     code: `${github}/MotionNet-avPrediction`,
   },
+  {
+    slug: "glidepath",
+    title: "Glidepath",
+    summary: "Glidepath flies a small plane in a flight simulator by itself, from takeoff to a stop on the runway, including landings in a crosswind. It flies on the position and attitude its own simulated sensors give it.",
+    code: `${github}/glidepath`,
+  },
+  {
+    slug: "showdown",
+    title: "Showdown",
+    summary: "Showdown learns to play Rhode Island Hold'em, a two-player poker game, by playing against itself. Even a perfect opponent wins under 1% of the minimum bet per hand against the strategy it learns.",
+    code: `${github}/Showdown-Rhode-Island-Solver`,
+  },
 ];
 
 export function getProject(slug: string): Project | undefined {

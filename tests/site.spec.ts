@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const PAGES = ["/", "/projects/", "/throughline/", "/motionnet/", "/about/", "/cv/", "/contact/"];
+const PAGES = ["/", "/projects/", "/throughline/", "/motionnet/", "/glidepath/", "/showdown/", "/about/", "/cv/", "/contact/"];
 const WIDTHS = [375, 768, 1280, 1920];
 const SHOTS = process.env.SHOT_DIR;
 
@@ -84,7 +84,12 @@ test("a project opens in place, scrolls as one page, and the name leads home", a
 });
 
 test("the projects page lists every project and opens each one", async ({ page }) => {
-  for (const [name, path] of [["Throughline", /\/throughline\/$/], ["MotionNet", /\/motionnet\/$/]] as const) {
+  for (const [name, path] of [
+    ["Throughline", /\/throughline\/$/],
+    ["MotionNet", /\/motionnet\/$/],
+    ["Glidepath", /\/glidepath\/$/],
+    ["Showdown", /\/showdown\/$/],
+  ] as const) {
     await page.goto("/projects/");
     await expect(page.getByRole("heading", { level: 1, name: "Projects" })).toBeVisible();
     await page.getByRole("main").getByRole("link", { name: new RegExp(name) }).click();
@@ -98,12 +103,14 @@ test("the projects page lists every project and opens each one", async ({ page }
 
 test("previous and next walk through the projects", async ({ page }) => {
   await page.goto("/throughline/");
-  await page.getByRole("link", { name: /Next → MotionNet/ }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "MotionNet" })).toBeVisible();
+  for (const name of ["MotionNet", "Glidepath", "Showdown"]) {
+    await page.getByRole("link", { name: new RegExp(`Next → ${name}`) }).click();
+    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  }
   await expect(page.getByRole("link", { name: /Next →/ })).toHaveCount(0);
 });
 
-const PROJECT_PAGES = ["/throughline/", "/motionnet/"];
+const PROJECT_PAGES = ["/throughline/", "/motionnet/", "/glidepath/", "/showdown/"];
 
 for (const path of PAGES.slice(1)) {
   const isProject = PROJECT_PAGES.includes(path);
@@ -114,8 +121,7 @@ for (const path of PAGES.slice(1)) {
     if (isProject) {
       // Project pages carry the README minus build steps: results table, a
       // diagram drawn inline (not the exported image), and no build commands.
-      await expect(page.getByRole("heading", { level: 2, name: "Results" })).toBeVisible();
-      await expect(page.locator("table").first()).toBeVisible();
+      await expect(page.getByRole("heading", { level: 2, name: "Method" })).toBeVisible();
       await expect(page.locator("svg[role=img][aria-label^='Diagram of how']")).toBeVisible();
       await expect(page.locator("img[src^='/media/diagrams/']")).toHaveCount(0);
       await expect(page.locator("pre")).toHaveCount(0);

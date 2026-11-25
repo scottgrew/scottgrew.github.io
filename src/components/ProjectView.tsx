@@ -2,7 +2,9 @@ import Link from "next/link";
 import Markdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { projects, type Project } from "@/content/site";
+import { GlidepathDiagram } from "./diagrams/GlidepathDiagram";
 import { MotionNetDiagram } from "./diagrams/MotionNetDiagram";
+import { ShowdownDiagram } from "./diagrams/ShowdownDiagram";
 import { ThroughlineDiagram } from "./diagrams/ThroughlineDiagram";
 import { Page } from "./Page";
 import { ProjectMotif } from "./ProjectMotif";
@@ -14,6 +16,8 @@ import styles from "./ProjectView.module.css";
 const DIAGRAMS: Record<string, React.ComponentType<{ label: string }>> = {
   "/media/diagrams/throughline.svg": ThroughlineDiagram,
   "/media/diagrams/motionnet.svg": MotionNetDiagram,
+  "/media/diagrams/glidepath.svg": GlidepathDiagram,
+  "/media/diagrams/showdown.svg": ShowdownDiagram,
 };
 
 const README_COMPONENTS: Components = {
