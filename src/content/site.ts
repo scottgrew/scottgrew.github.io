@@ -86,8 +86,13 @@ export const cv = {
   image: "/cv/resume.png",
 };
 
+export const projectsPage = {
+  title: "Projects",
+  description: "Projects by Scott Grew.",
+};
+
 export const navItems: SiteLink[] = [
-  ...projects.map((p) => ({ label: p.title, href: `/${p.slug}/` })),
+  { label: "Projects", href: "/projects/" },
   { label: "About", href: "/about/" },
   { label: "CV", href: "/cv/" },
 ];

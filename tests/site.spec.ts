@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const PAGES = ["/", "/throughline/", "/motionnet/", "/about/", "/cv/", "/contact/"];
+const PAGES = ["/", "/projects/", "/throughline/", "/motionnet/", "/about/", "/cv/", "/contact/"];
 const WIDTHS = [375, 768, 1280, 1920];
 const SHOTS = process.env.SHOT_DIR;
 
@@ -24,7 +24,7 @@ test("home shows the name, the nav and the live sky", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Scott Grew" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(4);
+  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link")).toHaveCount(3);
   await page.waitForTimeout(2200);
   expect(await opacity(page, "h1")).toBe("1");
   expect(await opacity(page, "nav[aria-label=Main]")).toBe("1");
@@ -52,7 +52,9 @@ test("a project opens in place, scrolls as one page, and the name leads home", a
   });
   await page.goto("/");
   await page.waitForTimeout(2000);
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Throughline" }).click();
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Projects" }).click();
+  await expect(page).toHaveURL(/\/projects\/$/);
+  await page.getByRole("main").getByRole("link", { name: /Throughline/ }).click();
   await expect(page).toHaveURL(/\/throughline\/$/);
   await expect(page.getByRole("heading", { level: 1, name: "Throughline" })).toBeVisible();
   await expect(page.locator("header[data-view=page]")).toHaveCount(1);
@@ -79,6 +81,19 @@ test("a project opens in place, scrolls as one page, and the name leads home", a
   await page.goForward();
   await expect(page.getByRole("heading", { level: 1, name: "Scott Grew" })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("the projects page lists every project and opens each one", async ({ page }) => {
+  for (const [name, path] of [["Throughline", /\/throughline\/$/], ["MotionNet", /\/motionnet\/$/]] as const) {
+    await page.goto("/projects/");
+    await expect(page.getByRole("heading", { level: 1, name: "Projects" })).toBeVisible();
+    await page.getByRole("main").getByRole("link", { name: new RegExp(name) }).click();
+    await expect(page).toHaveURL(path);
+    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Projects" }),
+    ).toHaveAttribute("aria-current", "page");
+  }
 });
 
 test("previous and next walk through the projects", async ({ page }) => {

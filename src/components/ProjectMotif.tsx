@@ -61,6 +61,14 @@ function PathFan() {
   );
 }
 
+// The drawing alone, without its easter egg, for the projects list: a click
+// there opens the project.
+export function ProjectDrawing({ slug }: { slug: string }) {
+  if (slug === "throughline") return <LidarSweep />;
+  if (slug === "motionnet") return <PathFan />;
+  return null;
+}
+
 export function ProjectMotif({ slug }: { slug: string }) {
   if (slug === "throughline") return <ClickEgg name="tracker" overlay={TrackerOverlay}><LidarSweep /></ClickEgg>;
   if (slug === "motionnet") return <ClickEgg name="futures" overlay={FuturesOverlay}><PathFan /></ClickEgg>;

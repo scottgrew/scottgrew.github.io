@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ViewTransition, useEffect, useRef, useState } from "react";
-import { home, navItems, titleTransition } from "@/content/site";
+import { home, navItems, projects, titleTransition } from "@/content/site";
 import { ConsoleSummary } from "./Eggs";
 import { COLUMN_DONE, NAME_DONE, SKY_RESOLVING, after, introSeen, listenForSkipInput, markIntroSeen, onSkip, signal } from "./intro";
 import { NameCloud } from "./NameCloud";
@@ -24,11 +24,14 @@ function normalize(pathname: string) {
 }
 
 function Nav({ current, compact }: { current: string; compact: boolean }) {
+  // A project page is still inside Projects.
+  const onProjectPage = projects.some((p) => `/${p.slug}` === current);
   return (
     <ViewTransition name="site-nav">
       <nav aria-label="Main" className={compact ? styles.navCompact : styles.nav}>
         {navItems.map((item) => {
-          const active = normalize(item.href) === current;
+          const active =
+            normalize(item.href) === current || (item.href === "/projects/" && onProjectPage);
           return (
             <Link
               key={item.href}
